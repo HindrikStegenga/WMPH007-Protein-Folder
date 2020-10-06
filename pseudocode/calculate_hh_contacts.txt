@@ -1,0 +1,29 @@
+# Returns the energy level of the chain
+# Epsilon is the energy associated with two H contacts
+func calculate_energy(epsilon, chain):
+ 	# Initially zero encounters
+ 	f = 0
+
+ 	# Iterate over all monomers
+ 	for monomer in chain:
+
+ 		# We are only interested in H monomers
+ 		if monomer != H:
+ 			continue
+
+ 		# Iterate over all other monomers to check neighbours
+ 		for possible_neighbour_monomer in chain:
+ 			# Again, we're only interested in H monomers
+ 			if possible_neighbour_monomer != H:
+ 				continue
+
+ 			# Add 1 to f
+ 			if is_neighbour(monomer, possible_neighbour_monomer):
+ 				f += 1
+
+ 	# Effectively we walk the chain twice, thus counting all contacts twice.
+ 	# Therefore we have to simply divide by 2 to obtain f.
+ 	# Because we count them exactly twice, we can use integer mathmatics as f is # guaranteed to be divisible by 2
+ 	f = f / 2
+
+ 	return -1.0 * epsilon * f

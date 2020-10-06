@@ -6,6 +6,10 @@ from drawing import *
 if __name__ == '__main__':
     seed(1234, 2)  # Set seed to fixed value for reproducibility
 
-    for i in range(0, 5):
+    for i in range(0, 1):
         chain = generate_protein(25, 0.5)
-        plot_protein(chain)
+        lattice = ProteinLattice(chain)
+        plot_protein(lattice)
+        
+        for i in chain:
+            print(lattice.get_by_coordinate(i.x, i.y))

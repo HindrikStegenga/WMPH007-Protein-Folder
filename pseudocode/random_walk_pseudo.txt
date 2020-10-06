@@ -1,0 +1,49 @@
+# N is length of the desired protein, H_chance is a chance 0-1 wether it's a H or P monomer.
+func random_walk(N, H_chance):
+	
+	# To track excluded nodes
+	# This is to exclude nodes in case we get stuck and backtrack
+	excluded = []
+
+	# Initialize the chain with a initial new node at (0,0)
+	chain = [
+		create_node(kind: choose_monomer_kind(H_chance), (0, 0)
+	]
+
+	loop:
+		# Choose direction to add new monomer, up/down/left/right
+		direction = choose_direction()
+
+		# Compute the new coordinate based on last node in the chain and direction
+		new_coord = compute_last_coord(current_chain.last(), direction)
+
+		# Evaluate a function which checks if the node can be placed.
+		# This function not only checks for neighbours, but also checks the excluded list.
+		if is_valid_new_position(new_coord, current, excluded):
+
+			chain.append(
+				create_node(kind: choose_monomer(H_chance), new_coord)
+			)
+		
+		# In case we cannot place the node, because it's either blocked or excluded because it's a dead end
+		else:
+
+			# Append the new node coord to the excluded list
+			excluded.append(new_coord)
+
+			# We now need to check if the previous node, i.e. last one in the chain, is a dead end. 
+			# This can occur if the new coord was the last available direction, in which case we must go back, as there is no way to continue
+			# In such a situation we need to remove the last node and and it to the excluded list, therefore the algorithm continues 
+			# again at the node before the previous one. (Where new_coord is the 'current' one)
+
+			previous = chain.last()
+			if is_dead(previous):
+				chain.pop()
+				excluded.append(previous)
+
+		# The final thing we need to do at each iteration in our loop is to 
+		# check wether we have reached a chain of N nodes
+		# Since our algorithm includes backtracking it will always converge to a solution
+		if N == chain.len():
+			return chain
+
