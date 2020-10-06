@@ -15,7 +15,7 @@ def plot_protein(chain: List[ProteinMonomer]):
     kinds = [int(elem.kind) for elem in chain]
 
     plt.plot(x_coords, y_coords, 'k-', zorder=0)
-    plt.scatter(x_coords, y_coords, c=kinds, cmap=colormap, s=200, zorder=3)
+    plt.scatter(x_coords, y_coords, c=kinds, cmap=colormap, zorder=3)
     plt.margins(0.1)
     plt.gca().set_aspect('equal')
 
