@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 
-class ProteinKind(IntEnum):
+class MonomerKind(IntEnum):
     H = 1
     P = 2
 
@@ -15,8 +15,8 @@ class ProteinKind(IntEnum):
         }[self]
 
 
-class ProteinMonomer:
-    def __init__(self, kind: ProteinKind, x: int, y: int):
+class Monomer:
+    def __init__(self, kind: MonomerKind, x: int, y: int):
         self.kind = kind
         self.x: int = x
         self.y: int = y

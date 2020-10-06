@@ -6,5 +6,6 @@ from drawing import *
 if __name__ == '__main__':
     seed(1234, 2)  # Set seed to fixed value for reproducibility
 
-    chain = generate_protein(25, 0.5)
-    plot_protein(chain)
+    for i in range(0, 5):
+        chain = generate_protein(25, 0.5)
+        plot_protein(chain)
