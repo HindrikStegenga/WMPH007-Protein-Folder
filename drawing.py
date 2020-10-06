@@ -26,7 +26,7 @@ def plot_protein(lattice: ProteinLattice):
              for elem in sorted([col for row in lattice.lattice for col in row], key=lambda e: e.index)
              if elem.index != -1]
 
-    plt.title('Protein - N = {}, E = {}'.format(len(lattice.chain), calculate_energy(1.0, lattice.chain)))
+    plt.title('Protein - N = {}, E = {}'.format(len(lattice.chain), calculate_energy(1.0, lattice)))
     plt.plot(x_coords, y_coords, 'k-', zorder=0)
     plt.scatter(x_coords, y_coords, c=kinds, cmap=colormap, zorder=3)
     plt.margins(0.1)

@@ -71,14 +71,27 @@ class ProteinLattice:
         self.lattice = [[MonomerRecord(MonomerRecordValue.NONE, -1) for _ in range(grid_size)]
                         for _ in range(grid_size)]
 
+        # Set values with offset so 0,0 is in the middle of the lattice.
         for i in range(0, len(self.chain)):
             monomer = self.chain[i]
             offset = (len(self.chain) + 1)
             self.lattice[monomer.x + offset][monomer.y + offset].index = i
             self.lattice[monomer.x + offset][monomer.y + offset].value = MonomerRecordValue(int(monomer.kind))
 
+    # Returns an idx,value pair for a given position. idx = -1 if no monomer is present.
     def get_by_coordinate(self, x: int, y: int) -> (int, MonomerRecordValue):
         offset = int((len(self.lattice) + 1) / 2)
         val = self.lattice[x + offset][y + offset]
 
         return val.index, val.value
+
+    # Returns the direct neighbouring Monomers around (x,y), if any
+    def get_neighbours(self, x: int, y: int) -> List[Monomer]:
+        neighbours = []
+
+        for x,y in [(x-1, y), (x+1, y), (x, y-1),(x, y+1)]:
+            (idx, value) = self.get_by_coordinate(x, y)
+            if idx != -1:
+                neighbours.append(self.chain[idx])
+
+        return neighbours

@@ -10,6 +10,6 @@ if __name__ == '__main__':
         chain = generate_protein(25, 0.5)
         lattice = ProteinLattice(chain)
         plot_protein(lattice)
-        
+
         for i in chain:
             print(lattice.get_by_coordinate(i.x, i.y))
