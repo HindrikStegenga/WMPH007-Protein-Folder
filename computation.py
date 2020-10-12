@@ -36,7 +36,7 @@ def calculate_energy(epsilon: float, lattice: ProteinLattice) -> float:
 # Modifies the inserted lattice!
 def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
     monomer = lattice.chain[idx_to_jump]
-    if idx_to_jump == 0 or idx_to_jump == len(lattice.chain):
+    if idx_to_jump == 0 or idx_to_jump == len(lattice.chain) - 1:
         # Endpoint rotate
 
         # Determine previous monomer

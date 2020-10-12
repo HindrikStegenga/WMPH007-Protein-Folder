@@ -7,6 +7,11 @@ class Rotation(IntEnum):
     CounterClockWise = 1
 
 
+class MonomerPart(IntEnum):
+    Left = 0
+    Right = 1
+
+
 class MonomerRecordValue(IntEnum):
     NONE = 0
     H = 1
