@@ -1,25 +1,25 @@
 # Returns the energy level of the chain
 # Epsilon is the energy associated with two H contacts
-func calculate_energy(epsilon, chain):
+func calculate_energy(epsilon, lattice):
  	# Initially zero encounters
  	f = 0
 
- 	# Iterate over all monomers
- 	for monomer in chain:
+ 	# Iterate over all monomers in the chain
+ 	for monomer in lattice.chain:
 
  		# We are only interested in H monomers
  		if monomer != H:
  			continue
 
  		# Iterate over all other monomers to check neighbours
- 		for possible_neighbour_monomer in chain:
+ 		for neighbour in lattice.get_neighbours(monomer):
  			# Again, we're only interested in H monomers
- 			if possible_neighbour_monomer != H:
+ 			if neighbour != H:
  				continue
 
  			# Add 1 to f
- 			if is_neighbour(monomer, possible_neighbour_monomer):
- 				f += 1
+ 			f += 1
+ 				
 
  	# Effectively we walk the chain twice, thus counting all contacts twice.
  	# Therefore we have to simply divide by 2 to obtain f.

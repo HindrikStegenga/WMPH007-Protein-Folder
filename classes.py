@@ -2,6 +2,11 @@ from enum import IntEnum
 from typing import *
 
 
+class Rotation(IntEnum):
+    ClockWise = 0
+    CounterClockWise = 1
+
+
 class MonomerRecordValue(IntEnum):
     NONE = 0
     H = 1
@@ -84,6 +89,15 @@ class ProteinLattice:
         val = self.lattice[x + offset][y + offset]
 
         return val.index, val.value
+
+    # Move monomer to different position, replacing whatever was at x,y.
+    # Assumes x,y is empty!
+    def move_monomer(self, idx: int, x: int, y: int):
+        monomer = self.chain[idx]
+        self.lattice[x][y] = self.lattice[monomer.x][monomer.y]
+        self.lattice[monomer.x][monomer.y] = MonomerRecord(MonomerRecordValue(MonomerRecordValue.NONE), -1)
+        self.chain[idx].x = x
+        self.chain[idx].y = y
 
     # Returns the direct neighbouring Monomers around (x,y), if any
     def get_neighbours(self, x: int, y: int) -> List[Monomer]:
