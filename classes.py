@@ -92,12 +92,14 @@ class ProteinLattice:
             return val.index, val.value
         return -1, MonomerRecordValue.NONE
 
+    # Returns the monomer at position x,y
     def get_monomer(self, x: int, y: int) -> Optional[Monomer]:
         value = self.__lattice.get((x, y))
         if value is not None and value.index != -1:
             return self.chain[value.index]
         return None
 
+    # Returns whether there is a monomer at x,y
     def has_monomer(self, x: int, y: int) -> bool:
         value = self.__lattice.get((x, y))
         if value is not None:
@@ -106,14 +108,40 @@ class ProteinLattice:
 
     # Move monomer to different position, replacing whatever was at x,y.
     # Assumes x,y is empty!
+    # Assumes monomer.x and monomer.y are set in the lattice!
+    # DO NOT USE when multiple monomers need to be moved.
     def move_monomer(self, idx: int, x: int, y: int):
         monomer = self.chain[idx]
 
-        self.__lattice[(monomer.x, monomer.y)] = MonomerRecord(MonomerRecordValue(MonomerRecordValue.NONE), -1)
+        del self.__lattice[(monomer.x, monomer.y)]
         self.__lattice[(x, y)] = MonomerRecord(MonomerRecordValue(monomer.kind), idx)
 
         self.chain[idx].x = x
         self.chain[idx].y = y
+
+    # Debug function checking for internal inconsistencies in the lattice structure.
+    def consistency_check(self):
+        for idx in range(0, len(self.chain)):
+            monomer = self.chain[idx]
+            lat = self.__lattice[(monomer.x, monomer.y)]
+            assert lat.index == idx
+        assert len(self.chain) == len(self.__lattice)
+
+    # Moves multiple monomers at once.
+    # Tuple is: (index_in_chain, (x, y))
+    def move_monomers(self, new_positions: List[Tuple[int, Tuple[int, int]] ]):
+        # Remove all old items
+        for idx, _ in new_positions:
+            monomer = self.chain[idx]
+            ox, oy = monomer.x, monomer.y
+            del self.__lattice[(ox, oy)]
+
+        # Update the lattice
+        for idx, (nx, ny) in new_positions:
+            monomer = self.chain[idx]
+            self.__lattice[(nx, ny)] = MonomerRecord(MonomerRecordValue(monomer.kind), idx)
+            monomer.x = nx
+            monomer.y = ny
 
     # Returns the direct neighbouring Monomers around (x,y), if any
     def get_neighbours(self, x: int, y: int) -> List[Monomer]:
@@ -125,17 +153,3 @@ class ProteinLattice:
                 neighbours.append(self.chain[idx])
 
         return neighbours
-
-    # # Plots the lattice as a matrix
-    # def plot(self):
-    #     nparr = np.empty([len(self.__lattice), len(self.__lattice)])
-    #     for x in range(0, len(self.__lattice)):
-    #         for y in range(0, len(self.__lattice)):
-    #             nparr[x, y] = self.__lattice[x][y].index
-    #
-    #     plt.matshow(nparr, cmap=plt.cm.Blues)
-    #     for x in range(0, len(self.__lattice)):
-    #         for y in range(0, len(self.__lattice)):
-    #             c = nparr[x, y]
-    #             #plt.text(x, y, str(c), va='center', ha='center')
-    #     plt.show()

@@ -51,11 +51,18 @@ def kink_jump_lookup_table(diff_prev_x: int,
                            diff_prev_y: int,
                            diff_next_x: int,
                            diff_next_y: int) -> List[Tuple[int, int]]:
-    return {  # Only four possible configurations can match, otherwise return empty list
+    return {  # Only eight possible configurations can match, otherwise return empty list
+        # Clock Wise
         ((0, 1), (1, 0)): [(1, 1)],  # prev above, next right
         ((1, 0), (0, -1)): [(1, -1)],  # prev right, next bottom
         ((0, -1), (-1, 0)): [(-1, -1)],  # prev bottom, next left
-        ((-1, 0), (0, 1)): [(-1, 1)]  # prev left, next top
+        ((-1, 0), (0, 1)): [(-1, 1)],  # prev left, next top
+
+        # Counter Clock Wise
+        ((0, 1), (-1, 0)): [(-1, 1)],  # prev above, next left
+        ((-1, 0), (0, -1)): [(-1, -1)],  # prev left, next bottom
+        ((0, -1), (1, 0)): [(1, -1)],  # prev bottom, next right
+        ((1, 0), (0, 1)): [(1, 1)],  # prev right, next top
     }.get(((diff_prev_x, diff_prev_y), (diff_next_x, diff_next_y)), [])
 
 
@@ -111,11 +118,11 @@ def gather_rotated_monomers(lattice: ProteinLattice,
     monomers = []
     if part == MonomerPart.Left:
         # Get 0 - idx (exclusive idx)
-        for i in range(0, rotation_point_idx + 1):
+        for i in range(0, rotation_point_idx):
             monomers.append((i, lattice.chain[i]))
     else:
         # Get idx - end (exclusive idx)
-        for i in range(rotation_point_idx, len(lattice.chain)):
+        for i in range(rotation_point_idx + 1, len(lattice.chain)):
             monomers.append((i, lattice.chain[i]))
 
     return monomers
@@ -145,7 +152,7 @@ def perform_pivot(rotation_point_idx: int,
     }[direction]
 
     new_positions = []
-    for (_, monomer) in rotated_part:
+    for (mon_idx, monomer) in rotated_part:
         # Translate the monomer to 0,0
         shifted_x = monomer.x - rotation_monomer.x
         shifted_y = monomer.y - rotation_monomer.y
@@ -160,11 +167,13 @@ def perform_pivot(rotation_point_idx: int,
         rotated_shifted_y = int(round(a3 + a4))
 
         # Translate the monomer back to original position
-        new_positions.append((rotated_shifted_x + rotation_monomer.x,
-                              rotated_shifted_y + rotation_monomer.y))
+        new_positions.append((mon_idx,
+                              (rotated_shifted_x + rotation_monomer.x,
+                               rotated_shifted_y + rotation_monomer.y)
+                              ))
 
     # We need to check both the lattice if we can rotate.
-    for (x, y) in new_positions:
+    for (_, (x, y)) in new_positions:
         # Check for positions from the rotated part, these are always free after rotation.
         # (It effectively excludes the positions of the rotated part.)
         if any(elem.x == x and elem.y == y for (_, elem) in rotated_part):
@@ -174,10 +183,7 @@ def perform_pivot(rotation_point_idx: int,
             return False
 
     # Actually move the monomers to the new positions in the lattice/chain
-    for idx in range(0, len(rotated_part)):
-        (idx_in_chain, _) = rotated_part[idx]
-        (x, y) = new_positions[idx]
-        lattice.move_monomer(idx_in_chain, x, y)
+    lattice.move_monomers(new_positions)
 
     return True
 
@@ -205,6 +211,7 @@ def mmc(temperature: int,
                 direction = choice([0, 1])
                 part = choice([0, 1])
                 success = perform_pivot(rotation_idx, Direction(direction), MonomerPart(part), lattice)
-
-        if iteration % sampling_frequency == 0:
+        print('Iteration: {}/{}'.format(iteration, max_iterations))
+        if (iteration + 1) % sampling_frequency == 0:
             drawing.plot_protein(lattice)
+        lattice.consistency_check()
