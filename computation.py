@@ -31,6 +31,31 @@ def calculate_energy(epsilon: float, lattice: ProteinLattice) -> float:
     return -1.0 * epsilon * float(f)
 
 
+# Returns the positions to check for a diff between previous and current points.
+# Specifically for endpoint rotations.
+def endpoints_rotate_lookup_table(diff_x: int, diff_y: int) -> List[Tuple[int, int]]:
+    return {
+        (0, +1): [(1, 0), (-1, 0)],  # If prev is above, return right/left
+        (0, -1): [(1, 0), (-1, 0)],  # If prev is below, return right/left
+        (+1, 0): [(0, 1), (0, -1)],  # If prev is right, return top/bottom
+        (-1, 0): [(0, 1), (0, -1)],  # If prev is left, return top/bottom
+    }[(diff_x, diff_y)]
+
+
+# Returns position of potential kink jump, if any, based on neighbour positions.
+# Returns List of coordinates with len = 1, or len = 0 if no potential kink jump.
+def kink_jump_lookup_table(diff_prev_x: int,
+                           diff_prev_y: int,
+                           diff_next_x: int,
+                           diff_next_y: int) -> List[Tuple[int, int]]:
+    return {  # Only four possible configurations can match, otherwise return empty
+        ((0,  1), (1,  0)): [(1, 1)],    # prev above, next right
+        ((1,  0), (0, -1)): [(1, -1)],   # prev right, next bottom
+        ((0, -1), (-1, 0)): [(-1, -1)],  # prev bottom, next left
+        ((-1, 0), (0,  1)): [(-1, 1)]    # prev left, next top
+    }.get(((diff_prev_x, diff_prev_y), (diff_next_x, diff_next_y)), [])
+
+
 # Tries to do a kink jump, returns whether it succeeded or not
 # Might do an endpoint rotation if requested on endpoint in chain
 # Modifies the inserted lattice!
@@ -38,86 +63,34 @@ def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
     monomer = lattice.chain[idx_to_jump]
     if idx_to_jump == 0 or idx_to_jump == len(lattice.chain) - 1:
         # Endpoint rotate
-
         # Determine previous monomer
         if idx_to_jump == 0:
             prev_monomer = lattice.chain[1]
         else:
             prev_monomer = lattice.chain[-2]
 
-        # Determine if endpoint rotate can be performed
-        if ((prev_monomer.x == monomer.x and prev_monomer.y == monomer.y + 1) or
-                (prev_monomer.x == monomer.x and prev_monomer.y == monomer.y - 1)):
-            # Prev = top/bottom, try rotate right, then left. (clockwise)
-            if lattice.lattice[prev_monomer.x + 1][prev_monomer.y].index == -1:
-                # Right
-                lattice.move_monomer(idx_to_jump, prev_monomer.x + 1, prev_monomer.y)
+        # Determine relative offsets from prev_monomer based on diff xy
+        offsets = endpoints_rotate_lookup_table(prev_monomer.x - monomer.x, prev_monomer.y - monomer.y)
+        for (x, y) in offsets:
+            # Check if position is taken or not, and move if possible.
+            if lattice.lattice[prev_monomer.x + x][prev_monomer.y + y].index == -1:
+                lattice.move_monomer(idx_to_jump, prev_monomer.x + x, prev_monomer.y + y)
                 return True
-            if lattice.lattice[prev_monomer.x - 1][prev_monomer.y].index == -1:
-                # Left
-                lattice.move_monomer(idx_to_jump, prev_monomer.x - 1, prev_monomer.y)
-                return True
-
-        if ((prev_monomer.x + 1 == monomer.x and prev_monomer.y == monomer.y) or
-                (prev_monomer.x - 1 == monomer.x and prev_monomer.y == monomer.y)):
-            # Prev = left/right, try rotate top, then bottom. (clockwise)
-            if lattice.lattice[prev_monomer.x][prev_monomer.y + 1].index == -1:
-                # Top
-                lattice.move_monomer(idx_to_jump, prev_monomer.x, prev_monomer.y + 1)
-                return True
-            if lattice.lattice[prev_monomer.x][prev_monomer.y - 1].index == -1:
-                # Bottom
-                lattice.move_monomer(idx_to_jump, prev_monomer.x - 1, prev_monomer.y)
-                return True
-
     else:
         # Determine if a kink jump can be performed
         prev_mon = lattice.chain[idx_to_jump - 1]
         next_mon = lattice.chain[idx_to_jump + 1]
         # Check the four configurations
-        # Check
-        if (prev_mon.x == monomer.x and
-                prev_mon.y == monomer.y + 1 and
-                next_mon.x == monomer.x + 1 and
-                next_mon.y == monomer.y):
-            # prev = top, next is right
-            # Check x + 1, y + 1
-            if lattice.lattice[monomer.x + 1][monomer.y + 1].index == -1:
-                # Hooray we can do kink jump here!
-                lattice.move_monomer(idx_to_jump, monomer.x + 1, monomer.y + 1)
-                return True
 
-        if (prev_mon.x == monomer.x + 1 and
-                prev_mon.y == monomer.y and
-                next_mon.x == monomer.x and
-                next_mon.y == monomer.y - 1):
-            # prev = right, next is bottom
-            # Check x + 1, y - 1
-            if lattice.lattice[monomer.x + 1][monomer.y - 1].index == -1:
-                # Hooray we can do kink jump here!
-                lattice.move_monomer(idx_to_jump, monomer.x + 1, monomer.y - 1)
-                return True
+        # Gather the position to check
+        offsets = kink_jump_lookup_table(prev_mon.x - monomer.x,
+                                         prev_mon.y - monomer.y,
+                                         next_mon.x - monomer.x,
+                                         next_mon.y - monomer.y)
 
-        if (prev_mon.x == monomer.x and
-                prev_mon.y == monomer.y - 1 and
-                next_mon.x == monomer.x - 1 and
-                next_mon.y == monomer.y):
-            # prev = bottom, next is left
-            # Check x - 1, y - 1
-            if lattice.lattice[monomer.x - 1][monomer.y - 1].index == -1:
-                # Hooray we can do kink jump here!
-                lattice.move_monomer(idx_to_jump, monomer.x - 1, monomer.y - 1)
-                return True
-
-        if (prev_mon.x == monomer.x - 1 and
-                prev_mon.y == monomer.y and
-                next_mon.x == monomer.x and
-                next_mon.y == monomer.y + 1):
-            # prev = left, next is top
-            # Check x - 1, y + 1
-            if lattice.lattice[monomer.x - 1][monomer.y + 1].index == -1:
-                # Hooray we can do kink jump here!
-                lattice.move_monomer(idx_to_jump, monomer.x - 1, monomer.y + 1)
+        for (x, y) in offsets:
+            if lattice.lattice[monomer.x + x][monomer.y + x].index == -1:
+                lattice.move_monomer(idx_to_jump, monomer.x + x, monomer.y + y)
                 return True
 
     return False

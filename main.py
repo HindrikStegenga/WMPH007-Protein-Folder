@@ -9,7 +9,7 @@ if __name__ == '__main__':
     for i in range(0, 1):
         chain = generate_protein(25, 0.5)
         lattice = ProteinLattice(chain)
-        print(perform_kink_jump(24, lattice))
+        print(perform_kink_jump(9, lattice))
         plot_protein(lattice)
         # for i in chain:
             # print(lattice.get_by_coordinate(i.x, i.y))
