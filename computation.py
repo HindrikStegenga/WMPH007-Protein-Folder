@@ -137,11 +137,11 @@ def perform_pivot(rotation_point_idx: int,
 
     new_positions = []
     for (_, monomer) in rotated_part:
-        # Shift all monomers
+        # Translate the monomer to 0,0
         shifted_x = monomer.x - rotation_monomer.x
         shifted_y = monomer.y - rotation_monomer.y
 
-        # Rotate all monomers
+        # Rotate the monomer
         a1 = float(shifted_x) * math.cos(angle)
         a2 = float(shifted_y) * math.sin(angle)
         a3 = float(shifted_x) * math.sin(angle)
@@ -150,7 +150,7 @@ def perform_pivot(rotation_point_idx: int,
         rotated_shifted_x = int(round(a1 - a2))
         rotated_shifted_y = int(round(a3 + a4))
 
-        # Shift monomers back
+        # Translate the monomer back to original position
         new_positions.append((rotated_shifted_x + rotation_monomer.x,
                               rotated_shifted_y + rotation_monomer.y))
 
