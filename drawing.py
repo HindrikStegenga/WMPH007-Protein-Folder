@@ -2,7 +2,6 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
 from computation import *
-from itertools import *
 
 blue = np.array([65 / 256, 105 / 256, 225 / 256, 1])
 orange = np.array([255 / 256, 165 / 256, 0 / 256, 1])
@@ -20,3 +19,4 @@ def plot_protein(lattice: ProteinLattice):
     plt.margins(0.1)
     plt.gca().set_aspect('equal')
     plt.show()
+
