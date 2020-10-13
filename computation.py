@@ -59,6 +59,7 @@ def kink_jump_lookup_table(diff_prev_x: int,
 # Tries to do a kink jump, returns whether it succeeded or not
 # Might do an endpoint rotation if requested on endpoint in chain
 # Modifies the inserted lattice!
+# TODO: Implement random selection of endpoint rotation.
 def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
     monomer = lattice.chain[idx_to_jump]
     if idx_to_jump == 0 or idx_to_jump == len(lattice.chain) - 1:
