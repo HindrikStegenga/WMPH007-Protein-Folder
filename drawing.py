@@ -10,21 +10,9 @@ colormap = ListedColormap([blue, orange])
 
 
 def plot_protein(lattice: ProteinLattice):
-    #x_coords = [elem.x for elem in lattice.chain]
-    #y_coords = [elem.y for elem in lattice.chain]
-    #kinds = [int(elem.kind) for elem in lattice.chain]
-
-    x_coords = [int(lattice.chain[elem.index].x)
-                for elem in sorted([col for row in lattice.lattice for col in row], key=lambda e: e.index)
-                if elem.index != -1]
-
-    y_coords = [int(lattice.chain[elem.index].y)
-                for elem in sorted([col for row in lattice.lattice for col in row], key=lambda e: e.index)
-                if elem.index != -1]
-
-    kinds = [int(lattice.chain[elem.index].kind)
-             for elem in sorted([col for row in lattice.lattice for col in row], key=lambda e: e.index)
-             if elem.index != -1]
+    x_coords = [elem.x for elem in lattice.chain]
+    y_coords = [elem.y for elem in lattice.chain]
+    kinds = [int(elem.kind) for elem in lattice.chain]
 
     plt.title('Protein - N = {}, E = {}'.format(len(lattice.chain), calculate_energy(1.0, lattice)))
     plt.plot(x_coords, y_coords, 'k-', zorder=0)

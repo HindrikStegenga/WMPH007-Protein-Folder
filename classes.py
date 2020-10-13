@@ -2,7 +2,7 @@ from enum import IntEnum
 from typing import *
 
 
-class Rotation(IntEnum):
+class Direction(IntEnum):
     ClockWise = 0
     CounterClockWise = 1
 
@@ -78,29 +78,40 @@ class ProteinLattice:
     def __calculate_lattice(self):
         grid_size = 2 * len(self.chain) + 1
         # Initialize lattice with zero values
-        self.lattice = [[MonomerRecord(MonomerRecordValue.NONE, -1) for _ in range(grid_size)]
-                        for _ in range(grid_size)]
+        self.__lattice = [[MonomerRecord(MonomerRecordValue.NONE, -1) for _ in range(grid_size)]
+                          for _ in range(grid_size)]
 
         # Set values with offset so 0,0 is in the middle of the lattice.
         for i in range(0, len(self.chain)):
             monomer = self.chain[i]
             offset = (len(self.chain) + 1)
-            self.lattice[monomer.x + offset][monomer.y + offset].index = i
-            self.lattice[monomer.x + offset][monomer.y + offset].value = MonomerRecordValue(int(monomer.kind))
+            self.__lattice[monomer.x + offset][monomer.y + offset].index = i
+            self.__lattice[monomer.x + offset][monomer.y + offset].value = MonomerRecordValue(int(monomer.kind))
 
     # Returns an idx,value pair for a given position. idx = -1 if no monomer is present.
     def get_by_coordinate(self, x: int, y: int) -> (int, MonomerRecordValue):
-        offset = int((len(self.lattice) + 1) / 2)
-        val = self.lattice[x + offset][y + offset]
+        offset = int((len(self.__lattice) + 1) / 2)
+        val = self.__lattice[x + offset][y + offset]
 
         return val.index, val.value
+
+    def get_monomer(self, x: int, y: int) -> Optional[Monomer]:
+        offset = int((len(self.__lattice) + 1) / 2)
+        if self.__lattice[x + offset][y + offset].index != -1:
+            return self.chain[self.__lattice[x + offset][y + offset].index]
+        return None
+
+    def has_monomer(self, x: int, y: int) -> bool:
+        offset = int((len(self.__lattice) + 1) / 2)
+        return self.__lattice[x + offset][y + offset].index != -1
 
     # Move monomer to different position, replacing whatever was at x,y.
     # Assumes x,y is empty!
     def move_monomer(self, idx: int, x: int, y: int):
         monomer = self.chain[idx]
-        self.lattice[x][y] = self.lattice[monomer.x][monomer.y]
-        self.lattice[monomer.x][monomer.y] = MonomerRecord(MonomerRecordValue(MonomerRecordValue.NONE), -1)
+        offset = int((len(self.__lattice) + 1) / 2)
+        self.__lattice[x + offset][y + offset] = self.__lattice[monomer.x + offset][monomer.y + offset]
+        self.__lattice[monomer.x][monomer.y] = MonomerRecord(MonomerRecordValue(MonomerRecordValue.NONE), -1)
         self.chain[idx].x = x
         self.chain[idx].y = y
 

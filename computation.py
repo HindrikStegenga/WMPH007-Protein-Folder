@@ -1,5 +1,6 @@
 from classes import *
 from typing import *
+import math
 
 
 # Returns the energy level of the chain
@@ -49,16 +50,16 @@ def kink_jump_lookup_table(diff_prev_x: int,
                            diff_next_x: int,
                            diff_next_y: int) -> List[Tuple[int, int]]:
     return {  # Only four possible configurations can match, otherwise return empty list
-        ((0,  1), (1,  0)): [(1, 1)],    # prev above, next right
-        ((1,  0), (0, -1)): [(1, -1)],   # prev right, next bottom
+        ((0, 1), (1, 0)): [(1, 1)],  # prev above, next right
+        ((1, 0), (0, -1)): [(1, -1)],  # prev right, next bottom
         ((0, -1), (-1, 0)): [(-1, -1)],  # prev bottom, next left
-        ((-1, 0), (0,  1)): [(-1, 1)]    # prev left, next top
+        ((-1, 0), (0, 1)): [(-1, 1)]  # prev left, next top
     }.get(((diff_prev_x, diff_prev_y), (diff_next_x, diff_next_y)), [])
 
 
 # Tries to do a kink jump, returns whether it succeeded or not
 # Might do an endpoint rotation if requested on endpoint in chain
-# Modifies the inserted lattice!
+# Modifies the given lattice!
 # TODO: Implement random selection of endpoint rotation.
 def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
     monomer = lattice.chain[idx_to_jump]
@@ -74,7 +75,7 @@ def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
         offsets = endpoints_rotate_lookup_table(prev_monomer.x - monomer.x, prev_monomer.y - monomer.y)
         for (x, y) in offsets:
             # Check if position is taken or not, and move if possible.
-            if lattice.lattice[prev_monomer.x + x][prev_monomer.y + y].index == -1:
+            if lattice.has_monomer(prev_monomer.x + x, prev_monomer.y + y):
                 lattice.move_monomer(idx_to_jump, prev_monomer.x + x, prev_monomer.y + y)
                 return True
     else:
@@ -93,7 +94,7 @@ def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
         for (x, y) in offsets:
             # List will always be either 0 or 1 in length.
             # (Using a list makes it easier to use than an explicit None check)
-            if lattice.lattice[monomer.x + x][monomer.y + x].index == -1:
+            if lattice.has_monomer(monomer.x + x, monomer.y + x):
                 lattice.move_monomer(idx_to_jump, monomer.x + x, monomer.y + y)
                 return True
 
@@ -101,9 +102,66 @@ def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
     return False
 
 
-# Tries to perform a pivot move
-def perform_pivot(endpoint: Monomer, rotation: Rotation, lattice: ProteinLattice) -> bool:
-    return True
+# Gathers all monomers that need to be rotated based on rotation point and part
+def gather_rotated_monomers(lattice: ProteinLattice,
+                            rotation_point_idx: int,
+                            part: MonomerPart) -> List[Tuple[int, Monomer]]:
+    monomers = []
+    if part == MonomerPart.Left:
+        # Get 0 - idx (exclusive idx)
+        for i in range(0, rotation_point_idx):
+            monomers.append((i, lattice.chain[i]))
+    else:
+        # Get idx - end (exclusive idx)
+        for i in range(rotation_point_idx + 1, len(lattice.chain)):
+            monomers.append((i, lattice.chain[i]))
 
-# Calculates a new chain with a kink_jump
-# def calculate_new_chain_kink_jump_end_rot()
+    return monomers
+
+
+# Tries to perform a pivot move given a rotation point, direction, which part to rotate and the input lattice.
+# Returns true if rotation succeeded, false if not.
+# Modifies the given lattice!
+def perform_pivot(rotation_point_idx: int,
+                  direction: Direction,
+                  rotated_part: MonomerPart,
+                  lattice: ProteinLattice) -> bool:
+    rotation_monomer = lattice.chain[rotation_point_idx]
+
+    rotated_part = gather_rotated_monomers(lattice, rotation_point_idx, rotated_part)
+    # Get the rotation angle
+    angle = {
+        Direction.ClockWise: 3 * math.pi / 2.0,
+        Direction.CounterClockWise: math.pi / 2.0
+    }[direction]
+
+    new_positions = []
+    for (_, monomer) in rotated_part:
+        # Shift all monomers
+        shifted_x = monomer.x - rotation_monomer.x
+        shifted_y = monomer.y - rotation_monomer.y
+
+        rotated_shifted_x = int(round(float(shifted_x) * math.cos(angle)) - (float(shifted_y) * math.sin(angle)))
+        rotated_shifted_y = int(round(float(shifted_x) * math.sin(angle)) + (float(shifted_y) * math.cos(angle)))
+
+        # Shift monomers back
+        new_positions.append((rotated_shifted_x + rotation_monomer.x,
+                              rotated_shifted_y + rotation_monomer.y))
+
+    # We need to check both the lattice if we can rotate.
+    for (x, y) in new_positions:
+        # Check for positions from the rotated part, these are always free after rotation.
+        # (It effectively excludes the positions of the rotated part.)
+        if any(elem.x == x and elem.y == y for (_, elem) in rotated_part):
+            continue
+        # Check the lattice
+        if lattice.has_monomer(x, y):
+            return False
+
+    # Actually move the monomers to the new positions in the lattice/chain
+    for idx in range(0, len(rotated_part)):
+        (idx_in_chain, _) = rotated_part[idx]
+        (x, y) = new_positions[idx]
+        lattice.move_monomer(idx_in_chain, x, y)
+
+    return True
