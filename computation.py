@@ -48,7 +48,7 @@ def kink_jump_lookup_table(diff_prev_x: int,
                            diff_prev_y: int,
                            diff_next_x: int,
                            diff_next_y: int) -> List[Tuple[int, int]]:
-    return {  # Only four possible configurations can match, otherwise return empty
+    return {  # Only four possible configurations can match, otherwise return empty list
         ((0,  1), (1,  0)): [(1, 1)],    # prev above, next right
         ((1,  0), (0, -1)): [(1, -1)],   # prev right, next bottom
         ((0, -1), (-1, 0)): [(-1, -1)],  # prev bottom, next left
@@ -88,11 +88,15 @@ def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
                                          next_mon.x - monomer.x,
                                          next_mon.y - monomer.y)
 
+        # Check if position is taken or not, perform kink jump if possible.
         for (x, y) in offsets:
+            # List will always be either 0 or 1 in length.
+            # (Using a list makes it easier to use than an explicit None check)
             if lattice.lattice[monomer.x + x][monomer.y + x].index == -1:
                 lattice.move_monomer(idx_to_jump, monomer.x + x, monomer.y + y)
                 return True
 
+    # No kink jump possible. Returning False.
     return False
 
 
