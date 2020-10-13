@@ -10,7 +10,9 @@ if __name__ == '__main__':
         chain = generate_protein(25, 0.5)
         lattice = ProteinLattice(chain)
         #print(perform_kink_jump(9, lattice))
-        print(perform_pivot(11, Direction.ClockWise, MonomerPart.Right, lattice))
+        print(perform_pivot(6, Direction.CounterClockWise, MonomerPart.Right, lattice))
+        print(perform_pivot(12, Direction.CounterClockWise, MonomerPart.Right, lattice))
+
         plot_protein(lattice)
         # for i in chain:
             # print(lattice.get_by_coordinate(i.x, i.y))
