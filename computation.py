@@ -1,5 +1,7 @@
+import drawing
 from classes import *
 from typing import *
+from generation import *
 import math
 
 
@@ -75,7 +77,7 @@ def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
         offsets = endpoints_rotate_lookup_table(prev_monomer.x - monomer.x, prev_monomer.y - monomer.y)
         for (x, y) in offsets:
             # Check if position is taken or not, and move if possible.
-            if lattice.has_monomer(prev_monomer.x + x, prev_monomer.y + y):
+            if not lattice.has_monomer(prev_monomer.x + x, prev_monomer.y + y):
                 lattice.move_monomer(idx_to_jump, prev_monomer.x + x, prev_monomer.y + y)
                 return True
     else:
@@ -94,7 +96,7 @@ def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
         for (x, y) in offsets:
             # List will always be either 0 or 1 in length.
             # (Using a list makes it easier to use than an explicit None check)
-            if lattice.has_monomer(monomer.x + x, monomer.y + x):
+            if not lattice.has_monomer(monomer.x + x, monomer.y + y):
                 lattice.move_monomer(idx_to_jump, monomer.x + x, monomer.y + y)
                 return True
 
@@ -109,11 +111,11 @@ def gather_rotated_monomers(lattice: ProteinLattice,
     monomers = []
     if part == MonomerPart.Left:
         # Get 0 - idx (exclusive idx)
-        for i in range(0, rotation_point_idx):
+        for i in range(0, rotation_point_idx + 1):
             monomers.append((i, lattice.chain[i]))
     else:
         # Get idx - end (exclusive idx)
-        for i in range(rotation_point_idx + 1, len(lattice.chain)):
+        for i in range(rotation_point_idx, len(lattice.chain)):
             monomers.append((i, lattice.chain[i]))
 
     return monomers
@@ -129,6 +131,13 @@ def perform_pivot(rotation_point_idx: int,
     rotation_monomer = lattice.chain[rotation_point_idx]
 
     rotated_part = gather_rotated_monomers(lattice, rotation_point_idx, rotated_part)
+
+    # Exception for special case when rotating the endpoint and part to rotate is len == 0
+    # In such a special case, nothing is done to the monomer, thus we would waste an iteration.
+    # Therefore, we return False.
+    if len(rotated_part) == 0:
+        return False
+
     # Get the rotation angle
     angle = {
         Direction.ClockWise: 3 * math.pi / 2.0,
@@ -171,3 +180,31 @@ def perform_pivot(rotation_point_idx: int,
         lattice.move_monomer(idx_in_chain, x, y)
 
     return True
+
+
+def mmc(temperature: int,
+        chain_length: int,
+        max_iterations: int,
+        sampling_frequency: int,
+        hydrophobicity: float):
+    lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity))
+
+    for iteration in range(0, max_iterations):
+        operation_kind = choice([0, 1])
+        if operation_kind == 0:
+            # Perform kink jump
+            success = False
+            while not success:
+                jump_idx = choices(range(0, len(lattice.chain)))[0]
+                success = perform_kink_jump(jump_idx, lattice)
+        else:
+            # Perform pivot
+            success = False
+            while not success:
+                rotation_idx = choices(range(0, len(lattice.chain)))[0]
+                direction = choice([0, 1])
+                part = choice([0, 1])
+                success = perform_pivot(rotation_idx, Direction(direction), MonomerPart(part), lattice)
+
+        if iteration % sampling_frequency == 0:
+            drawing.plot_protein(lattice)
