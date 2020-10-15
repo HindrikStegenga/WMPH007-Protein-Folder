@@ -192,9 +192,12 @@ def mmc(temperature: int,
         chain_length: int,
         max_iterations: int,
         sampling_frequency: int,
-        hydrophobicity: float):
+        hydrophobicity: float,
+        epsilon: float = 1.0,
+        boltzmann: float = 1.0):
     # Generate the protein chain.
     lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity))
+    energy = calculate_energy(epsilon, lattice)
 
     for iteration in range(0, max_iterations):
         operation_kind = choice([0, 1])
@@ -214,8 +217,19 @@ def mmc(temperature: int,
                 success = perform_pivot(rotation_idx, Direction(direction), MonomerPart(part), lattice)
 
         # We have successfully changed our chain here.
-        lattice.undo_last_change()
+        new_energy = calculate_energy(epsilon, lattice)
+        if new_energy < energy:
+            energy = new_energy
+        else:
+            # boltzmann weight
+            w = math.exp(- (new_energy - energy) / (boltzmann * temperature))
+            # Reject if w is smaller or equal to random value in 0-1
+            if w > random():
+                energy = new_energy
+            else:
+                lattice.undo_last_change()
+
         print('Iteration: {}/{}'.format(iteration, max_iterations))
         if (iteration + 1) % sampling_frequency == 0:
             drawing.plot_protein(lattice)
-        lattice.consistency_check()
+        # lattice.consistency_check()
