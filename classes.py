@@ -20,6 +20,13 @@ class MonomerRecordValue(IntEnum):
     P = 2
 
 
+class MonomerMoveRecord:
+    def __init__(self, index: int, old: Tuple[int, int], new: Tuple[int, int]):
+        self.index = index
+        self.old = old
+        self.new = new
+
+
 class MonomerRecord:
     def __init__(self, value: MonomerRecordValue, index_in_chain: int):
         self.value: MonomerRecordValue = value
@@ -70,6 +77,7 @@ class ProteinLattice:
     def __init__(self, chain: List[Monomer]):
         # The protein chain as a list
         self.chain: List[Monomer] = chain[:]
+        self.undo_set: List[MonomerMoveRecord] = []
         # The lattice, used for fast lookups!
         self.__calculate_lattice()
 
@@ -106,12 +114,32 @@ class ProteinLattice:
             return value.index != -1
         return False
 
+    # Undoes the latest move(s) in the chain.
+    def undo_last_change(self):
+        # Remove all old items
+        for record in self.undo_set:
+            del self.__lattice[record.new]
+
+        # Update the lattice
+        for record in self.undo_set:
+            monomer = self.chain[record.index]
+            self.__lattice[record.old] = MonomerRecord(MonomerRecordValue(monomer.kind), record.index)
+            monomer.x = record.old[0]
+            monomer.y = record.old[1]
+
+        # Clear undo set
+        self.undo_set = []
+
     # Move monomer to different position, replacing whatever was at x,y.
     # Assumes x,y is empty!
     # Assumes monomer.x and monomer.y are set in the lattice!
     # DO NOT USE when multiple monomers need to be moved.
+    # Erases and replaces the undo stack!
     def move_monomer(self, idx: int, x: int, y: int):
         monomer = self.chain[idx]
+
+        self.undo_set = []
+        self.undo_set.append(MonomerMoveRecord(idx, (monomer.x, monomer.y), (x, y)))
 
         del self.__lattice[(monomer.x, monomer.y)]
         self.__lattice[(x, y)] = MonomerRecord(MonomerRecordValue(monomer.kind), idx)
@@ -129,7 +157,14 @@ class ProteinLattice:
 
     # Moves multiple monomers at once.
     # Tuple is: (index_in_chain, (x, y))
-    def move_monomers(self, new_positions: List[Tuple[int, Tuple[int, int]] ]):
+    # Erases and replaces the undo stack!
+    def move_monomers(self, new_positions: List[Tuple[int, Tuple[int, int]]]):
+        # Set up the undo set
+        self.undo_set = []
+        for idx, (x, y) in new_positions:
+            monomer = self.chain[idx]
+            self.undo_set.append(MonomerMoveRecord(idx, (monomer.x, monomer.y), (x, y)))
+
         # Remove all old items
         for idx, _ in new_positions:
             monomer = self.chain[idx]

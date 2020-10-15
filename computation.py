@@ -193,6 +193,7 @@ def mmc(temperature: int,
         max_iterations: int,
         sampling_frequency: int,
         hydrophobicity: float):
+    # Generate the protein chain.
     lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity))
 
     for iteration in range(0, max_iterations):
@@ -211,6 +212,9 @@ def mmc(temperature: int,
                 direction = choice([0, 1])
                 part = choice([0, 1])
                 success = perform_pivot(rotation_idx, Direction(direction), MonomerPart(part), lattice)
+
+        # We have successfully changed our chain here.
+        lattice.undo_last_change()
         print('Iteration: {}/{}'.format(iteration, max_iterations))
         if (iteration + 1) % sampling_frequency == 0:
             drawing.plot_protein(lattice)
