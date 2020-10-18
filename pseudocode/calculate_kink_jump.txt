@@ -1,6 +1,6 @@
 # Tries to attempt a kink jump, returns true if success or not.
 func kink_jump(jump_idx, lattice):
-    if jump_idx == 0 or lattice.chain.len() -1 == jump_idx:
+    if jump_idx == 0 or lattice.chain.len() - 1 == jump_idx:
         # Rotate endpoint
 
         # Determine what the previous monomer is.
@@ -32,3 +32,28 @@ func kink_jump(jump_idx, lattice):
         return False
     else:
         # Kink jump
+
+        # Determine prev and next monomers in the chain.
+        prev_monomer = lattice.chain[jump_idx - 1]
+        next_monomer = lattice.chain[jump_idx + 1]
+
+        # Determine the positions to test for a possible kink jump,
+        # based on difference in coordinates using a lookup table.
+        offsets = kink_jump_lookup_table(prev_mon.x - monomer.x,
+                                          prev_mon.y - monomer.y,
+                                          next_mon.x - monomer.x,
+                                          next_mon.y - monomer.y)
+
+        # We have at most 2 offsets we need to check.
+        for (x,y) in offsets:
+            # Check if the offset is free.
+            if not lattice.has_monomer(prev_monomer.x + x,
+                                       prev_monomer.y + y):
+                # Move the monomer in the lattice/chain.
+                lattice.move_monomer(jump_idx,
+                                     prev_monomer.x + x,
+                                     prev_monomer.y + y)
+                return True
+
+    # None of the offsets were free, returning False.
+    return False
