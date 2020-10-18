@@ -188,17 +188,21 @@ def perform_pivot(rotation_point_idx: int,
     return True
 
 
-def mmc(temperature: int,
+def mmc(temperature: float,
         chain_length: int,
         max_iterations: int,
         sampling_frequency: int,
         hydrophobicity: float,
         epsilon: float = 1.0,
-        boltzmann: float = 1.0):
+        boltzmann: float = 1.0) -> [float]:
+    seed(1234, 2)  # Set seed to fixed value for reproducibility of initial configuration.
     # Generate the protein chain.
+    samples = []
     lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity))
     energy = calculate_energy(epsilon, lattice)
-
+    samples.append(energy)
+    drawing.plot_protein(lattice)
+    seed()
     for iteration in range(0, max_iterations):
         operation_kind = choice([0, 1])
         if operation_kind == 0:
@@ -222,14 +226,16 @@ def mmc(temperature: int,
             energy = new_energy
         else:
             # boltzmann weight
-            w = math.exp(- (new_energy - energy) / (boltzmann * temperature))
+            w: float = math.exp(- (float(new_energy) - float(energy)) / float(boltzmann) * temperature)
             # Reject if w is smaller or equal to random value in 0-1
             if w > random():
                 energy = new_energy
             else:
                 lattice.undo_last_change()
 
-        print('Iteration: {}/{}'.format(iteration, max_iterations))
+        print('Iteration: {}/{}'.format(iteration + 1, max_iterations))
         if (iteration + 1) % sampling_frequency == 0:
-            drawing.plot_protein(lattice)
-        # lattice.consistency_check()
+            samples.append(energy)
+
+    drawing.plot_protein(lattice)
+    return samples
