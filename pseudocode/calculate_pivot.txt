@@ -1,0 +1,42 @@
+func perform_pivot(rotation_point_idx, direction, rotated_side, lattice)
+    # The monomer at the rotation point.
+    rotation_monomer = lattice.chain[rotation_point_idx]
+
+    # The monomers that are being rotated
+    rotated_part = gather_rotated_monomers(lattice, rotation_point_idx, rotated_side)
+
+    # Get the rotation angle (Either 3 pi/2 or pi/2)
+    angle = get_angle(direction)
+
+    # Array to collect new positions in
+    new_positions = []
+
+    for monomer in rotated_part
+        # Translate to 0,0 relative to rotation_monomer.
+        shifted_x = monomer.x - rotation_monomer.x
+        shifted_y = monomer.y - rotation_monomer.y
+
+        # Rotate the monomer
+        a1 = shifted_x * cos(angle)
+        a2 = shifted_y * sin(angle)
+        a3 = shifted_x * sin(angle)
+        a4 = shifted_y * cos(angle)
+
+        rotated_shifted_x = int(round(a1 - a2))
+        rotated_shifted_y = int(round(a3 + a4))
+
+        # Translate the monomer back to original position and add it to new_positions
+        new_positions.push((rotated_shifted_x + rotation_monomer.x,
+                           rotated_shifted_y + rotation_monomer.y))
+
+    # Check if all coordinates are free
+    # We can exclude those that are rotated to positions
+    # in the original configuration, those are always free
+    for x,y in new_positions.filter(rotated_part)
+        if lattice.has_monomer(x, y)
+            return False
+
+    # Move all monomers to new positions
+    lattice.move_monomers(rotated_part, new_positions)
+
+    return True
