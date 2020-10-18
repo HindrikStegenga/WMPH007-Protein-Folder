@@ -1,0 +1,47 @@
+# Implements the full MMC protein folding algorithm
+func mmc(length, hydrophobicity, max_iterations, temperature, epsilon = 1, boltzmann = 1)
+
+    samples = []
+    # Generate protein and calculate base energy level.
+    lattice = generate_lattice(length, hydrophobicity)
+    energy = calculate_energy(epsilon, lattice)
+    # Add initial energy level
+    samples.append(energy)
+
+    for iteration in range(0, max_iterations)
+        # Pick the move to performs
+        move_kind = random([0,1])
+        if move_kind = 0
+            # kink jump
+            success = false
+            while not success
+                # pick monomer
+                jump_idx = random([chain])
+                success = perform_kink_jump(jump_idx, lattice)
+        else
+            # pivot
+            success = false
+            while not success
+                rotation_idx = random([chain])
+                direction = random([0,1])
+                side = random([0,1])
+                success = perform_pivot(rotation_idx, direction, side, lattices)
+
+        # calculate new energy level after performing a move
+        new_energy = calculate_energy(epsilon, lattice)
+        if new_energy < energy
+            energy = new_energy
+        else
+            # Compute boltzmann weight and either accept or reject move
+            w = exp(- (new_energy - energy) / boltzmann * temperature)
+            if w > random()
+                energy = new_energy
+            else
+                lattice.undo_last_move()
+
+        # Sample energy every so often
+        if iteration+1 % sampling_frequency == 0
+            samples.append(energy)
+
+    plot_protein(lattice)
+    return samples
