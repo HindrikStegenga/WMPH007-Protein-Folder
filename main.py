@@ -2,8 +2,8 @@ from generation import *
 from drawing import *
 
 
-# Checks whether the random walk creates proteines correctly.
-# Only checks the hydrophobicity fraction!
+# Checks whether the random walk creates proteins
+# correctly by printing the relevant data.
 def check_random_walk():
     ratios = []
     for i in range(0, 25):
@@ -16,13 +16,13 @@ def check_random_walk():
                                      hcount,
                                      pcount,
                                      get_chain_composition_string(protein)))
-
+        print(protein)
     print('Average hydrophobicity: {:.2f}'.format(sum(ratios) / len(ratios)))
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    check_random_walk()
-    samples = mmc(5.0, 25, 5000, 100, 0.5)
+    # check_random_walk()
+    samples = mmc(5.0, 25, 15000, 100, 0.5)
     plt.plot(samples)
     plt.show()

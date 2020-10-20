@@ -9,18 +9,27 @@ colormap = ListedColormap([blue, orange])
 
 
 def plot_protein(lattice: ProteinLattice, temperature: float):
-    x_coords = [elem.x for elem in lattice.chain]
-    y_coords = [elem.y for elem in lattice.chain]
-    kinds = [int(elem.kind) for elem in lattice.chain]
-
     plt.title('HP Protein, N = {}, E = {}, T = {}'.format(
         len(lattice.chain),
         calculate_energy(1.0, lattice),
         temperature))
 
-    plt.plot(x_coords, y_coords, 'k-', zorder=0)
-    plt.scatter(x_coords, y_coords, c=kinds, cmap=colormap, zorder=3)
+    plt.plot([elem.x for elem in lattice.chain],
+             [elem.y for elem in lattice.chain],
+             'k-', zorder=0)
+
+    plt.scatter([elem.x for elem in lattice.chain if elem.kind == MonomerKind.H],
+                [elem.y for elem in lattice.chain if elem.kind == MonomerKind.H],
+                zorder=3, label='H', color=blue)
+
+    plt.scatter([elem.x for elem in lattice.chain if elem.kind == MonomerKind.P],
+                [elem.y for elem in lattice.chain if elem.kind == MonomerKind.P],
+                zorder=3, label='P', color=orange)
+
     plt.margins(0.1)
+    plt.ylabel('position y-coordinate')
+    plt.xlabel('position x-coordinate')
+
+    plt.legend()
     plt.gca().set_aspect('equal')
     plt.show()
-
