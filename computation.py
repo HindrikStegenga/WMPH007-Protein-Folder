@@ -201,7 +201,7 @@ def mmc(temperature: float,
     lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity))
     energy = calculate_energy(epsilon, lattice)
     samples.append(energy)
-    drawing.plot_protein(lattice)
+    drawing.plot_protein(lattice, temperature)
     seed()
     for iteration in range(0, max_iterations):
         operation_kind = choice([0, 1])
@@ -237,5 +237,5 @@ def mmc(temperature: float,
         if (iteration + 1) % sampling_frequency == 0:
             samples.append(energy)
 
-    drawing.plot_protein(lattice)
+    drawing.plot_protein(lattice, temperature)
     return samples

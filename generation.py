@@ -24,6 +24,22 @@ def generate_new_coords(direction: int, old_x: int, old_y: int) -> (int, int):
     }[direction]
 
 
+# Returns the count of a kind of monomer in the chain.
+def get_kind_count(chain: List[Monomer], kind: MonomerKind) -> int:
+    return sum(1 for c in chain if c.kind == kind)
+
+
+# Returns a string containing H and P for each monomer
+def get_chain_composition_string(chain: List[Monomer]) -> str:
+    return_value = ''
+    for m in chain:
+        if m.kind == MonomerKind.H:
+            return_value += 'H'
+        else:
+            return_value += 'P'
+    return return_value
+
+
 # Validates if a given position is occupied in the chain.
 def has_monomer(x: int, y: int, chain: List[Monomer]) -> bool:
     for i in range(0, len(chain)):
