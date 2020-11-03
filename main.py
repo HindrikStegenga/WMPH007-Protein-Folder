@@ -7,9 +7,9 @@ import multiprocessing
 # This is done by spawning a separate process using the multiprocessing library
 # This massively speeds up our total time required for simulations.
 def perform_mmc(temp: float, out_list: List[Tuple[float, float]]):
-    _, es = mmc(temp, 25, 30000, 100, 0.5, 1.0, 1.0, True)
+    _, es = mmc(temp, 25, 40000, 100, 0.5, 1.0, 1.0, True)
     out_list.append((temp, compute_heat_capacity(es, temp)))
-    print('MMC: {}'.format(temp))
+    print('Computed MMC for T: {}'.format(temp))
 
 
 # Draws the plot for energy vs. iterations
@@ -49,35 +49,58 @@ def perform_mmc_benchmarking():
     draw_energy_iterations_plot(samples)
 
 
-# Main function of the program
-def main():
-    perform_mmc_benchmarking()
-    return
-
-    mmc_steps = 50
+# This function is ran for the simulated annealing procedure
+def perform_mmc_simulated_annealing():
+    # Total steps sampled from the temperature range
+    mmc_steps = 200
+    # Maximum temperature to set.
+    max_temp = 3.0
     jobs = []
-    manager = multiprocessing.Manager()
-    output_list = manager.list()
+
+    # Set up a return-value array using shared memory between multiple subprocesses
+    # This is where results of simulations are stored.
+    # The individual MMC simulations are independent, so we can easily parallelize it.
+    output_list = multiprocessing.Manager().list()
+
+    # Set up process pool
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+
+    # Iterate of the temperature range downwards from max_temp to 0
     for i in range(mmc_steps, 0, -1):
-        temperature = float(i * 2) / float(mmc_steps)
-        process = multiprocessing.Process(target=perform_mmc, args=(temperature, output_list))
-        jobs.append(process)
+        # Compute temperature
+        temperature = float(i * max_temp) / float(mmc_steps)
+        # Spawn job as a process to be submitted onto the process pool
+        job = pool.apply_async(perform_mmc, (temperature, output_list))
+        jobs.append(job)
 
-    for job in jobs:
-        job.start()
-    for job in jobs:
-        job.join()
-
+    # Execute the jobs
+    pool.close()
+    # Wait for the jobs
+    pool.join()
+    # Sort the results since order of threads is undefined
     output_list = sorted(output_list, key=lambda x: x[0])
-    print(output_list)
+
+    # Gather the samples for each value
     c_samples = [c for t, c in output_list]
     t_samples = [t for t, c in output_list]
 
-    plt.title('Energy vs. iterations')
+    # Plot the results
+    plt.title('Heat capacity vs. temperature')
     plt.plot(t_samples, c_samples)
     plt.ylabel('heat capacity')
     plt.xlabel('temperature')
     plt.show()
+
+
+# Main function of the program
+def main():
+    # Enable following two lines to run the benchmarking procedure for 3 fixed temperatures.
+    # perform_mmc_benchmarking()
+    # return
+
+    # Enable following two lines to run the simulated annealing procedure.
+    perform_mmc_simulated_annealing()
+    return
 
 
 # Press the green button in the gutter to run the script.
