@@ -5,14 +5,15 @@ from computation import *
 
 blue = np.array([65 / 256, 105 / 256, 225 / 256, 1])
 orange = np.array([255 / 256, 165 / 256, 0 / 256, 1])
-colormap = ListedColormap([blue, orange])
 
 
-def plot_protein(lattice: ProteinLattice, temperature: float):
-    plt.title('HP Protein, N = {}, E = {}, T = {}'.format(
+def plot_protein(lattice: ProteinLattice, temperature: float, hydrophobicity: float):
+    plt.title('HP Protein, N = {}, E = {}, T = {}, H = {:.2}'.format(
         len(lattice.chain),
         calculate_energy(1.0, lattice),
-        temperature))
+        temperature,
+        hydrophobicity
+    ))
 
     plt.plot([elem.x for elem in lattice.chain],
              [elem.y for elem in lattice.chain],

@@ -2,6 +2,7 @@ import drawing
 from classes import *
 from typing import *
 from generation import *
+from statistics import mean
 import math
 
 
@@ -69,7 +70,6 @@ def kink_jump_lookup_table(diff_prev_x: int,
 # Tries to do a kink jump, returns whether it succeeded or not
 # Might do an endpoint rotation if requested on endpoint in chain
 # Modifies the given lattice!
-# TODO: Implement random selection of endpoint rotation.
 def perform_kink_jump(idx_to_jump: int, lattice: ProteinLattice) -> bool:
     monomer = lattice.chain[idx_to_jump]
     if idx_to_jump == 0 or idx_to_jump == len(lattice.chain) - 1:
@@ -188,37 +188,97 @@ def perform_pivot(rotation_point_idx: int,
     return True
 
 
-def mmc(temperature: float,
+# Computes the heat capacity using the input float array of energy levels
+def compute_heat_capacity(values: List[float], temperature: float, boltzmann: float = 1.0,
+                          discard: bool = True, discard_fraction: float = 0.1) -> float:
+    if discard:
+        slice_idx = int(math.ceil(len(values) * discard_fraction))
+        values = values[slice_idx:len(values)]
+
+    mean_squared_energy = mean([e ** 2 for e in values])
+    mean_energy = mean(values)
+
+    return (mean_squared_energy - (mean_energy ** 2)) / (boltzmann * temperature)
+
+
+# Performs the kink jump move as part of the main mmc loop.
+# May fail, returns False in that case!
+def mmc_attempt_kink_jump(lattice: ProteinLattice) -> bool:
+    success = False
+    # Perform kink jump
+
+    # Keep track of attempted indices, since kink jumps and endpoint rotations are usually only possible on
+    # a few positions in the chain. So therefore we keep track of this as a small optimization in order to avoid
+    # re-attempting already attempted positions where we did a kink jump move.
+    # If this list becomes empty, it means kink jump was not possible. The function will return False.
+    # In such a situation the algorithm MUST perform a pivot first in order to get unstuck.
+    possible_attempts = [e for e in range(0, len(lattice.chain))]
+    while not success and len(possible_attempts) != 0:
+        jump_idx = choices(possible_attempts)[0]
+        success = perform_kink_jump(jump_idx, lattice)
+        if not success:
+            # Disallow attempted indices
+            possible_attempts.remove(jump_idx)
+    return success
+
+
+# Performs the pivot move as part of the main mmc loop.
+# In practice always succeeds so always should return True.
+def mmc_perform_pivot(lattice: ProteinLattice) -> bool:
+    success = False
+    while not success:
+        rotation_idx = choices(range(0, len(lattice.chain)))[0]
+        direction = choice([0, 1])
+        part = choice([0, 1])
+        success = perform_pivot(rotation_idx, Direction(direction), MonomerPart(part), lattice)
+    return success
+
+
+# Main function for performing the MMC simulation.
+def mmc(initial_temperature: float,
         chain_length: int,
         max_iterations: int,
         sampling_frequency: int,
         hydrophobicity: float,
         epsilon: float = 1.0,
-        boltzmann: float = 1.0) -> [float]:
+        boltzmann: float = 1.0,
+        annealing: bool = False,
+        draw_initial_conformation_plot: bool = False,
+        draw_resulting_conformation_plot: bool = False) -> Tuple[ProteinLattice, List[float]]:
+
     seed(1234, 2)  # Set seed to fixed value for reproducibility of initial configuration.
     # Generate the protein chain.
     samples = []
     lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity))
     energy = calculate_energy(epsilon, lattice)
     samples.append(energy)
-    # drawing.plot_protein(lattice, temperature)
-    seed()
+
+    if draw_initial_conformation_plot:
+        drawing.plot_protein(lattice, initial_temperature, hydrophobicity)
+
+    seed()  # Set new random seed
     for iteration in range(0, max_iterations):
+        if annealing:
+            temperature = initial_temperature - (iteration * (initial_temperature / max_iterations))
+        else:
+            temperature = initial_temperature
+
         operation_kind = choice([0, 1])
         if operation_kind == 0:
-            # Perform kink jump
-            success = False
-            while not success:
-                jump_idx = choices(range(0, len(lattice.chain)))[0]
-                success = perform_kink_jump(jump_idx, lattice)
+            # Perform kink jump / endpoint rotation.
+            # In some rare cases this can fail, so we need to check for that.
+            # In such situations there are no kink jump / endpoint rotations possible.
+            # Therefore, opposed to the given sample pseudocode, I check this and perform a pivot instead.
+            # This prevents the simulation from becoming stuck.
+            success = mmc_attempt_kink_jump(lattice)
         else:
             # Perform pivot
-            success = False
-            while not success:
-                rotation_idx = choices(range(0, len(lattice.chain)))[0]
-                direction = choice([0, 1])
-                part = choice([0, 1])
-                success = perform_pivot(rotation_idx, Direction(direction), MonomerPart(part), lattice)
+            success = mmc_perform_pivot(lattice)
+
+        # In certain rare cases a kink jump/endpoint_rotation is not possible,
+        # so we need to perform a pivot instead.
+        if not success and operation_kind == 0:
+            mmc_perform_pivot(lattice)
 
         # We have successfully changed our chain here.
         new_energy = calculate_energy(epsilon, lattice)
@@ -226,16 +286,22 @@ def mmc(temperature: float,
             energy = new_energy
         else:
             # boltzmann weight
-            w: float = math.exp(- (float(new_energy) - float(energy)) / float(boltzmann) * temperature)
+            w: float = math.exp(- (float(new_energy) - float(energy)) / (float(boltzmann) * temperature))
             # Reject if w is smaller or equal to random value in 0-1
             if w > random():
+                samples.append(energy)
                 energy = new_energy
             else:
                 lattice.undo_last_change()
 
-        print('Iteration: {}/{}'.format(iteration + 1, max_iterations))
+        # Uncomment this line to print progress.
+        # print('Iteration: {}/{} T: {}'.format(iteration + 1, max_iterations, temperature))
+
+        # Sample the energy
         if (iteration + 1) % sampling_frequency == 0:
             samples.append(energy)
 
-    drawing.plot_protein(lattice, temperature)
-    return samples
+    if draw_resulting_conformation_plot:
+        drawing.plot_protein(lattice, initial_temperature, hydrophobicity)
+
+    return lattice, samples

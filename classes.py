@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from enum import IntEnum
 from typing import *
+import math
 
 
 class Direction(IntEnum):
@@ -188,3 +189,32 @@ class ProteinLattice:
                 neighbours.append(self.chain[idx])
 
         return neighbours
+
+    # Computes the center coordinate of the protein
+    def compute_center_point(self) -> Tuple[float, float]:
+        min_x = min(self.chain, key=lambda e: e.x).x
+        max_x = max(self.chain, key=lambda e: e.x).x
+        min_y = min(self.chain, key=lambda e: e.y).y
+        max_y = max(self.chain, key=lambda e: e.y).y
+
+        dx: float = max_x - min_x
+        dy: float = max_y - min_y
+        return min_x + (dx / 2), min_y + (dy / 2)
+
+    # Computes the radius of gyration
+    def compute_gyration_radius(self) -> float:
+        rc = self.compute_center_point()
+        sum_of_squares = 0
+        for monomer in self.chain:
+            rk = monomer.x, monomer.y
+            # Compute the rk - rc
+            neg_x, neg_y = rk[0] - rc[0], rk[1] - rc[1]
+            # Compute dot product with itself
+            res = (neg_x ** 2) + (neg_y ** 2)
+            sum_of_squares += res
+        # Compute mean
+        mean_value = sum_of_squares / len(self.chain)
+        # Normalize
+        mean_value *= 1 / len(self.chain)
+        # Take the root and return
+        return math.sqrt(mean_value)
