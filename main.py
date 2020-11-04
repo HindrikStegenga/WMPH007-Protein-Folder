@@ -27,16 +27,14 @@ def perform_mmc_benchmarking():
     sample_frequency = 100
     averaging = 3
 
-    for i in range(0, 2):
-        _, samples = mmc(temperature,  # Temperature
-                         length,  # Length of the chain
-                         iterations,  # Total amount of iterations
-                         sample_frequency,  # Iterations at which to sample
-                         0.5,  # Hydrophobic fraction
-                         draw_initial_conformation_plot=False,
-                         draw_resulting_conformation_plot=True)
-        draw_energy_iterations_plot(running_average(samples.energy, averaging))
-    return
+    _, samples = mmc(temperature,  # Temperature
+                     length,  # Length of the chain
+                     iterations,  # Total amount of iterations
+                     sample_frequency,  # Iterations at which to sample
+                     0.2,  # Hydrophobic fraction
+                     draw_initial_conformation_plot=False,
+                     draw_resulting_conformation_plot=True)
+    draw_energy_iterations_plot(running_average(samples.energy, averaging))
 
     _, samples = mmc(temperature,  # Temperature
                      length,  # Length of the chain
