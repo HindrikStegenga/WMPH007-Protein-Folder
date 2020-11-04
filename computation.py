@@ -4,6 +4,14 @@ from typing import *
 from generation import *
 from statistics import mean
 import math
+import numpy
+
+
+# Computes running mean of x over n values
+def running_average(x, n: int = 3):
+    ret = np.cumsum(x, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
 
 
 # Returns the energy level of the chain
@@ -188,12 +196,17 @@ def perform_pivot(rotation_point_idx: int,
     return True
 
 
+# Discards first {fraction} amount of elements from values.
+def discard_fraction_of_array(values: List[float], fraction: float = 0.1) -> List[float]:
+    slice_idx = int(math.ceil(len(values) * fraction))
+    return values[slice_idx:len(values)]
+
+
 # Computes the heat capacity using the input float array of energy levels
 def compute_heat_capacity(values: List[float], temperature: float, boltzmann: float = 1.0,
                           discard: bool = True, discard_fraction: float = 0.1) -> float:
     if discard:
-        slice_idx = int(math.ceil(len(values) * discard_fraction))
-        values = values[slice_idx:len(values)]
+        values = discard_fraction_of_array(values, discard_fraction)
 
     mean_squared_energy = mean([e ** 2 for e in values])
     mean_energy = mean(values)
@@ -244,14 +257,15 @@ def mmc(initial_temperature: float,
         boltzmann: float = 1.0,
         annealing: bool = False,
         draw_initial_conformation_plot: bool = False,
-        draw_resulting_conformation_plot: bool = False) -> Tuple[ProteinLattice, List[float]]:
-
+        draw_resulting_conformation_plot: bool = False) -> Tuple[ProteinLattice, MMCSamples]:
     seed(1234, 2)  # Set seed to fixed value for reproducibility of initial configuration.
     # Generate the protein chain.
-    samples = []
+    energy_samples = []
+    gyration_samples = []
     lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity))
     energy = calculate_energy(epsilon, lattice)
-    samples.append(energy)
+    energy_samples.append(energy)
+    gyration_samples.append(lattice.compute_gyration_radius())
 
     if draw_initial_conformation_plot:
         drawing.plot_protein(lattice, initial_temperature, hydrophobicity)
@@ -289,7 +303,6 @@ def mmc(initial_temperature: float,
             w: float = math.exp(- (float(new_energy) - float(energy)) / (float(boltzmann) * temperature))
             # Reject if w is smaller or equal to random value in 0-1
             if w > random():
-                samples.append(energy)
                 energy = new_energy
             else:
                 lattice.undo_last_change()
@@ -299,9 +312,10 @@ def mmc(initial_temperature: float,
 
         # Sample the energy
         if (iteration + 1) % sampling_frequency == 0:
-            samples.append(energy)
+            energy_samples.append(energy)
+            gyration_samples.append(lattice.compute_gyration_radius())
 
     if draw_resulting_conformation_plot:
         drawing.plot_protein(lattice, initial_temperature, hydrophobicity)
 
-    return lattice, samples
+    return lattice, MMCSamples(energy_samples, gyration_samples)

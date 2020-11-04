@@ -34,3 +34,13 @@ def plot_protein(lattice: ProteinLattice, temperature: float, hydrophobicity: fl
     plt.legend()
     plt.gca().set_aspect('equal')
     plt.show()
+
+
+# Draws the plot for energy vs. iterations
+def draw_energy_iterations_plot(samples: List[float]):
+    print(len(samples))
+    plt.title('Energy vs. iterations')
+    plt.plot(samples)
+    plt.ylabel('Energy')
+    plt.xlabel('Iterations (x100)')
+    plt.show()

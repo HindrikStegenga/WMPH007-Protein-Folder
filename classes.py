@@ -218,3 +218,18 @@ class ProteinLattice:
         mean_value *= 1 / len(self.chain)
         # Take the root and return
         return math.sqrt(mean_value)
+
+
+# Represents collected samples from a MMC simulation
+class MMCSamples:
+    def __init__(self, energy: [float], gyration_radius: [float]):
+        self.energy: [float] = energy
+        self.gyration_radius: [float] = gyration_radius
+
+
+# Represents collected samples from Annealing MMC Simulation
+class AMMCSamples(MMCSamples):
+    def __init__(self, energy: [float], gyration_radius: [float], heat_capacity: float, temperature: float):
+        super().__init__(energy, gyration_radius)
+        self.heat_capacity: float = heat_capacity
+        self.temperature: [float] = temperature
