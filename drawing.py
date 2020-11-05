@@ -8,7 +8,7 @@ orange = np.array([255 / 256, 165 / 256, 0 / 256, 1])
 
 
 def plot_protein(lattice: ProteinLattice, temperature: float, hydrophobicity: float):
-    plt.title('HP Protein, N = {}, E = {}, T = {}, H = {:.2}'.format(
+    plt.title('HP Protein, N = {}, E = {:.2f}, T = {:.2f}, H = {:.2f}'.format(
         len(lattice.chain),
         calculate_energy(1.0, lattice),
         temperature,
@@ -43,4 +43,17 @@ def draw_energy_iterations_plot(samples: List[float]):
     plt.plot(samples)
     plt.ylabel('Energy')
     plt.xlabel('Iterations (x100)')
+    plt.show()
+
+
+# Draws plots for simulated annealing
+def draw_simulated_annealing_plots(lattice: ProteinLattice, results: List[Tuple[float, List[float], List[float]]]):
+    results.sort(key=lambda x: x[0])
+
+    temperatures = [elem[0] for elem in results]
+
+    heat_capacity_per_temp: List[float] = [compute_heat_capacity(elem[1], elem[0])
+                                           for elem in results]
+
+    plt.plot(temperatures, heat_capacity_per_temp)
     plt.show()

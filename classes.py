@@ -75,9 +75,10 @@ def calculate_chain_dimensions(chain: List[Monomer]) -> (int, int):
 class ProteinLattice:
 
     # Initializes a new Lattice based on the given chain
-    def __init__(self, chain: List[Monomer]):
+    def __init__(self, chain: List[Monomer], hydrophobicity: float):
         # The protein chain as a list
         self.chain: List[Monomer] = chain[:]
+        self.hydrophobicity: float = hydrophobicity
         self.undo_set: List[MonomerMoveRecord] = []
         # The lattice, used for fast lookups!
         self.__calculate_lattice()

@@ -247,36 +247,36 @@ def mmc_perform_pivot(lattice: ProteinLattice) -> bool:
     return success
 
 
+# Returns the default protein
+def mmc_initialize_default_protein(chain_length: int, hydrophobicity: float) -> ProteinLattice:
+    # Generate the protein chain.
+    seed(1234, 2)  # Set seed to fixed value for reproducibility of initial configuration.
+    lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity), hydrophobicity)
+
+    return lattice
+
+
 # Main function for performing the MMC simulation.
-def mmc(initial_temperature: float,
-        chain_length: int,
+def mmc(temperature: float,
         max_iterations: int,
         sampling_frequency: int,
-        hydrophobicity: float,
+        lattice: ProteinLattice,
         epsilon: float = 1.0,
         boltzmann: float = 1.0,
-        annealing: bool = False,
         draw_initial_conformation_plot: bool = False,
         draw_resulting_conformation_plot: bool = False) -> Tuple[ProteinLattice, MMCSamples]:
-    seed(1234, 2)  # Set seed to fixed value for reproducibility of initial configuration.
-    # Generate the protein chain.
+    # Draw the initial conformation or not
+    if draw_initial_conformation_plot:
+        drawing.plot_protein(lattice, temperature, lattice.hydrophobicity)
+
     energy_samples = []
     gyration_samples = []
-    lattice = ProteinLattice(generate_protein(chain_length, hydrophobicity))
+    # Take initial sample
     energy = calculate_energy(epsilon, lattice)
     energy_samples.append(energy)
     gyration_samples.append(lattice.compute_gyration_radius())
 
-    if draw_initial_conformation_plot:
-        drawing.plot_protein(lattice, initial_temperature, hydrophobicity)
-
-    seed()  # Set new random seed
     for iteration in range(0, max_iterations):
-        if annealing:
-            temperature = initial_temperature - (iteration * (initial_temperature / max_iterations))
-        else:
-            temperature = initial_temperature
-
         operation_kind = choice([0, 1])
         if operation_kind == 0:
             # Perform kink jump / endpoint rotation.
@@ -316,6 +316,6 @@ def mmc(initial_temperature: float,
             gyration_samples.append(lattice.compute_gyration_radius())
 
     if draw_resulting_conformation_plot:
-        drawing.plot_protein(lattice, initial_temperature, hydrophobicity)
+        drawing.plot_protein(lattice, temperature, lattice.hydrophobicity)
 
     return lattice, MMCSamples(energy_samples, gyration_samples)
