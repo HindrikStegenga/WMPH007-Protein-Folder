@@ -7,6 +7,10 @@ blue = np.array([65 / 256, 105 / 256, 225 / 256, 1])
 orange = np.array([255 / 256, 165 / 256, 0 / 256, 1])
 
 
+def next_perfect_square(N):
+    next_n = math.floor(math.sqrt(N)) + 1
+    return next_n * next_n
+
 def adjacent_values(vals, q1, q3):
     upper_adjacent_value = q3 + (q3 - q1) * 1.5
     upper_adjacent_value = np.clip(upper_adjacent_value, q3, vals[-1])
@@ -55,6 +59,40 @@ def draw_violin_plot_over_temp(title: str,
     plt.show()
 
 
+def draw_histograms(temperatures: List[float],
+                    values: List[List[float]],
+                    xlabel: str,
+                    ylabel: str,
+                    title: str):
+
+    cols = int(math.sqrt(next_perfect_square(len(temperatures))))
+    rows = int(len(temperatures) / cols)
+    print(len(temperatures))
+    print(rows)
+    print(cols)
+    fig, ax = plt.subplots(rows, cols, sharex='col', sharey='row', figsize=(17, 23))
+    fig.subplots_adjust(hspace=0.4, wspace=0.4)
+
+    for i in range(rows):
+        for j in range(cols):
+            if (i * rows) + j >= len(temperatures):
+                break
+
+            idx = (i * cols) + j
+            axis = ax[i, j]
+
+            axis.hist(values[idx], alpha=0.7, rwidth=0.85)
+            axis.grid(axis='y', alpha=0.75)
+            axis.set_title('T = {:.2f}'.format(temperatures[idx]))
+
+    for axi in ax.flat:
+        axi.set(xlabel=xlabel, ylabel=ylabel)
+
+    for axi in ax.flat:
+        axi.label_outer()
+
+    fig.suptitle(title, y=0.99, size='large')
+    fig.show()
 
 
 def plot_protein(lattice: ProteinLattice, temperature: float, hydrophobicity: float):
@@ -128,25 +166,35 @@ def draw_simulated_annealing_plots(lattice: ProteinLattice,
     plt.ylabel('Average gyration')
     plt.show()
 
-    # Draw distributions for gyration vs temp
+    # Draw distributions for energy vs temp
     if draw_energy_histograms_per_temp:
-        for result_set in results:
-            plt.hist(result_set[1], alpha=0.7, rwidth=0.85)
-            plt.grid(axis='y', alpha=0.75)
-            plt.xlabel('Energy radius')
-            plt.ylabel('Counts')
-            plt.title('Energy distribution at T = {:.2f}'.format(result_set[0]))
-            plt.show()
+        draw_histograms(temperatures, [result_set[1] for result_set in results],
+                        title='Energy distributions for different temperatures',
+                        xlabel='Energy levels',
+                        ylabel='Counts (relative)')
+        # for result_set in results:
+        #     plt.hist(result_set[1], alpha=0.7, rwidth=0.85)
+        #     plt.grid(axis='y', alpha=0.75)
+        #     plt.xlabel('Energy radius')
+        #     plt.ylabel('Counts')
+        #     plt.title('Energy distribution at T = {:.2f}'.format(result_set[0]))
+        #     plt.show()
 
     # Draw distributions for gyration vs temp
     if draw_gyration_histograms_per_temp:
-        for result_set in results:
-            plt.hist(result_set[2], alpha=0.7, rwidth=0.85)
-            plt.grid(axis='y', alpha=0.75)
-            plt.xlabel('Gyration radius')
-            plt.ylabel('Counts')
-            plt.title('Gyration radius distribution at T = {:.2f}'.format(result_set[0]))
-            plt.show()
+        draw_histograms(temperatures, [result_set[2] for result_set in results],
+                        title='Gyration radius distributions for different temperatures',
+                        xlabel='Gyration radii',
+                        ylabel='Counts (relative)')
+
+
+        # for result_set in results:
+        #     plt.hist(result_set[2], alpha=0.7, rwidth=0.85)
+        #     plt.grid(axis='y', alpha=0.75)
+        #     plt.xlabel('Gyration radius')
+        #     plt.ylabel('Counts')
+        #     plt.title('Gyration radius distribution at T = {:.2f}'.format(result_set[0]))
+        #     plt.show()
 
     # Draw violinplot for energy distributions
     draw_violin_plot_over_temp('Energy distributions per temperature',

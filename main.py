@@ -16,7 +16,7 @@ def main():
     # Enable following lines to run the simulated annealing procedure.
     lattice = mmc_initialize_default_protein(25, 0.5)
     lattice, results = perform_mmc_simulated_annealing2(lattice, 20, 5000, 2.0)
-    draw_simulated_annealing_plots(lattice, results)
+    draw_simulated_annealing_plots(lattice, results, draw_energy_histograms_per_temp=True)
 
     return
 
