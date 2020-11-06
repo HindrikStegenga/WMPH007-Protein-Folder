@@ -1,24 +1,22 @@
-from debug_functions import check_random_walk
 from benchmarking import *
-import multiprocessing
-import statistics
-from collections import Counter
 
 
+# Performs a simulated annealing procedure using the mmc function internally.
 def perform_mmc_simulated_annealing(
         lattice: ProteinLattice,
         temperature_steps: int,  # Total temperature steps
         mmc_iterations_per_step: int,  # MMC iterations_per_temperature.
         max_temp: float,  # Maximum temperature to use.
         min_temp: float = 0.0,  # Minimum temperature to use.
-        sampling_frequency: int = 100,
+        sampling_frequency: int = 100,  # Frequency at which the mmc function will sample values
         epsilon: float = 1.0,
         boltzmann: float = 1.0,
-        randomize_seed: bool = True,
+        randomize_seed: bool = True,  # Set a fresh seed before starting
         store_lowest_lattice: bool = False) -> Tuple[Tuple[ProteinLattice, float, float],
-                                                     ProteinLattice, List[Tuple[float,
-                                                                                List[float],
-                                                                                List[float]]]]:
+                                                     ProteinLattice,
+                                                     List[Tuple[float,
+                                                                List[float],
+                                                                List[float]]]]:
     # (final_temp, energy[], gyration[])
     results: List[Tuple[float, List[float], List[float]]] = []
 
@@ -26,6 +24,7 @@ def perform_mmc_simulated_annealing(
     if randomize_seed:
         seed()
 
+    # Keep track of best values observed.
     lowest_lattice = lattice
     lowest_lattice_energy: float = calculate_energy(epsilon, lattice)
     lowest_temp: float = max_temp
@@ -44,6 +43,7 @@ def perform_mmc_simulated_annealing(
                                                   boltzmann=boltzmann,
                                                   store_lowest_lattice=store_lowest_lattice)
 
+        # Store new lattice as lowest if a lower lattice has been encountered
         if store_lowest_lattice and lowest_energy < lowest_lattice_energy:
             lowest_lattice = copy.deepcopy(lowest)
             lowest_lattice_energy = lowest_energy
@@ -54,6 +54,7 @@ def perform_mmc_simulated_annealing(
         results.append((temperature, discard_fraction_of_array(samples.energy),
                         discard_fraction_of_array(samples.gyration_radius)))
 
+    # Compute and print some statistics
     print('Annealing at T: {:.2f}, {}/{}... done.'.format(min_temp, temperature_steps, temperature_steps))
     print('Final energy: {}'.format(calculate_energy(epsilon, lattice)))
     all_energy = [val

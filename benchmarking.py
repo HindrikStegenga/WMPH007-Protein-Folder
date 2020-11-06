@@ -14,28 +14,28 @@ def perform_mmc_benchmarking():
     lattice08 = mmc_initialize_default_protein(length, 0.8)
 
     seed()  # Set fresh seed
-    _, samples = mmc(temperature,  # Temperature
-                     iterations,  # Total amount of iterations
-                     sample_frequency,  # Iterations at which to sample
-                     lattice02,
-                     draw_initial_conformation_plot=False,
-                     draw_resulting_conformation_plot=True)
+    _, _, samples = mmc(temperature,  # Temperature
+                        iterations,  # Total amount of iterations
+                        sample_frequency,  # Iterations at which to sample
+                        lattice02,
+                        draw_initial_conformation_plot=False,
+                        draw_resulting_conformation_plot=True)
     draw_energy_iterations_plot(running_average(samples.energy, averaging))
 
     seed()  # Set fresh seed
-    _, samples = mmc(temperature,  # Temperature
-                     iterations,  # Total amount of iterations
-                     sample_frequency,  # Iterations at which to sample
-                     lattice05,
-                     draw_initial_conformation_plot=False,
-                     draw_resulting_conformation_plot=True)
+    _, _, samples = mmc(temperature,  # Temperature
+                        iterations,  # Total amount of iterations
+                        sample_frequency,  # Iterations at which to sample
+                        lattice05,
+                        draw_initial_conformation_plot=False,
+                        draw_resulting_conformation_plot=True)
     draw_energy_iterations_plot(running_average(samples.energy, averaging))
 
     seed()  # Set fresh seed
-    _, samples = mmc(temperature,  # Temperature
-                     iterations,  # Total amount of iterations
-                     sample_frequency,  # Iterations at which to sample
-                     lattice08,
-                     draw_initial_conformation_plot=False,
-                     draw_resulting_conformation_plot=True)
+    _, _, samples = mmc(temperature,  # Temperature
+                        iterations,  # Total amount of iterations
+                        sample_frequency,  # Iterations at which to sample
+                        lattice08,
+                        draw_initial_conformation_plot=False,
+                        draw_resulting_conformation_plot=True)
     draw_energy_iterations_plot(running_average(samples.energy, averaging))

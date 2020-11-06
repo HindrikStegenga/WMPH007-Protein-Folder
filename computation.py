@@ -258,30 +258,36 @@ def mmc_initialize_default_protein(chain_length: int, hydrophobicity: float) -> 
 
 
 # Main function for performing the MMC simulation.
-def mmc(temperature: float,
-        max_iterations: int,
-        sampling_frequency: int,
-        lattice: ProteinLattice,
-        epsilon: float = 1.0,
-        boltzmann: float = 1.0,
-        draw_initial_conformation_plot: bool = False,
-        draw_resulting_conformation_plot: bool = False,
+# Returns a tuple: ( (lowest_energy_lattice, lowest_energy), result_lattice, samples )
+def mmc(temperature: float,  # Temperature parameter
+        max_iterations: int,  # Iterations to do
+        sampling_frequency: int,  # Frequency at which needs to be sampled
+        lattice: ProteinLattice,  # Lattice that needs to be operated on
+        epsilon: float = 1.0,  # Epsilon
+        boltzmann: float = 1.0,  # Boltzmann weight
+        draw_initial_conformation_plot: bool = False,  # Boolean indicating if initial conformation needs to be drawn
+        draw_resulting_conformation_plot: bool = False,  # Boolean indicating if final conformation needs to be drawn
+        # Keeps track of lowest lattice found. Causes noticable performance hit due to excess copying of memory.
         store_lowest_lattice: bool = False) -> Tuple[Tuple[ProteinLattice, float], ProteinLattice, MMCSamples]:
+
     # Draw the initial conformation or not
     if draw_initial_conformation_plot:
-        drawing.plot_protein(lattice, temperature, lattice.hydrophobicity)
+        drawing.draw_protein_conformation(lattice, temperature, lattice.hydrophobicity)
 
     energy_samples = []
     gyration_samples = []
-    # Take initial sample
+
+    # Take initial samples
     energy = calculate_energy(epsilon, lattice)
     energy_samples.append(energy)
     gyration_samples.append(lattice.compute_gyration_radius())
 
+    # Store which lattice is the lowest encountered so far.
     lowest_lattice = lattice
     lowest_lattice_energy: float = energy
 
     for iteration in range(0, max_iterations):
+        # Choose operation
         operation_kind = choice([0, 1])
         if operation_kind == 0:
             # Perform kink jump / endpoint rotation.
@@ -303,6 +309,7 @@ def mmc(temperature: float,
         new_energy = calculate_energy(epsilon, lattice)
         if new_energy < energy:
             energy = new_energy
+            # Save the lattice as lowest using a deepcopy if this is new lowest energy lattice.
             if store_lowest_lattice and new_energy < lowest_lattice_energy:
                 lowest_lattice = copy.deepcopy(lattice)
                 lowest_lattice_energy = new_energy
@@ -319,12 +326,14 @@ def mmc(temperature: float,
         # Uncomment this line to print progress.
         # print('Iteration: {}/{} T: {}'.format(iteration + 1, max_iterations, temperature))
 
-        # Sample the energy
+        # Sample the energy and gyration
         if (iteration + 1) % sampling_frequency == 0:
             energy_samples.append(energy)
             gyration_samples.append(lattice.compute_gyration_radius())
 
+    # If enabled draw the resulting conformation plot
     if draw_resulting_conformation_plot:
-        drawing.plot_protein(lattice, temperature, lattice.hydrophobicity)
+        drawing.draw_protein_conformation(lattice, temperature, lattice.hydrophobicity)
 
+    # Return values
     return (lowest_lattice, lowest_lattice_energy), lattice, MMCSamples(energy_samples, gyration_samples)

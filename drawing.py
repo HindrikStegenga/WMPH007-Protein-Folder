@@ -1,16 +1,16 @@
-from matplotlib import pyplot as plt
-from matplotlib.colors import ListedColormap
-import numpy as np
 from computation import *
 
 blue = np.array([65 / 256, 105 / 256, 225 / 256, 1])
 orange = np.array([255 / 256, 165 / 256, 0 / 256, 1])
 
 
+# Compute next perfect square to determine grid size for histograms.
 def next_perfect_square(N):
     next_n = math.floor(math.sqrt(N)) + 1
     return next_n * next_n
 
+
+# Internal function for adjacency. Do not use.
 def adjacent_values(vals, q1, q3):
     upper_adjacent_value = q3 + (q3 - q1) * 1.5
     upper_adjacent_value = np.clip(upper_adjacent_value, q3, vals[-1])
@@ -20,6 +20,7 @@ def adjacent_values(vals, q1, q3):
     return lower_adjacent_value, upper_adjacent_value
 
 
+# Internal function used to set axis style of subplots.
 def set_axis_style(ax, labels):
     ax.get_xaxis().set_tick_params(direction='out')
     ax.xaxis.set_ticks_position('bottom')
@@ -28,6 +29,7 @@ def set_axis_style(ax, labels):
     ax.set_xlim(0.25, len(labels) + 0.75)
 
 
+# Draws violin plots vs. temperature.
 def draw_violin_plot_over_temp(title: str,
                                ylabel: str,
                                values: List[List[float]],
@@ -59,12 +61,13 @@ def draw_violin_plot_over_temp(title: str,
     plt.show()
 
 
+# Plots histograms for energy/gyration vs. temperature.
+# Plots them in a big figure.
 def draw_histograms(temperatures: List[float],
                     values: List[List[float]],
                     xlabel: str,
                     ylabel: str,
                     title: str):
-
     cols = int(math.sqrt(next_perfect_square(len(temperatures))))
     rows = int(len(temperatures) / cols)
     print(len(temperatures))
@@ -95,7 +98,8 @@ def draw_histograms(temperatures: List[float],
     fig.show()
 
 
-def plot_protein(lattice: ProteinLattice, temperature: float, hydrophobicity: float):
+# Plots the protein.
+def draw_protein_conformation(lattice: ProteinLattice, temperature: float, hydrophobicity: float):
     plt.title('HP Protein, N = {}, E = {:.2f}, T = {:.2f}, H = {:.2f}'.format(
         len(lattice.chain),
         calculate_energy(1.0, lattice),
@@ -139,6 +143,7 @@ def draw_simulated_annealing_plots(lattice: ProteinLattice,
                                    results: List[Tuple[float, List[float], List[float]]],
                                    draw_energy_histograms_per_temp: bool = False,
                                    draw_gyration_histograms_per_temp: bool = False):
+    # Sort results by temperature. min temp -> max temp
     results.sort(key=lambda x: x[0])
     temperatures = [elem[0] for elem in results]
 
@@ -172,13 +177,6 @@ def draw_simulated_annealing_plots(lattice: ProteinLattice,
                         title='Energy distributions for different temperatures',
                         xlabel='Energy levels',
                         ylabel='Counts (relative)')
-        # for result_set in results:
-        #     plt.hist(result_set[1], alpha=0.7, rwidth=0.85)
-        #     plt.grid(axis='y', alpha=0.75)
-        #     plt.xlabel('Energy radius')
-        #     plt.ylabel('Counts')
-        #     plt.title('Energy distribution at T = {:.2f}'.format(result_set[0]))
-        #     plt.show()
 
     # Draw distributions for gyration vs temp
     if draw_gyration_histograms_per_temp:
@@ -186,15 +184,6 @@ def draw_simulated_annealing_plots(lattice: ProteinLattice,
                         title='Gyration radius distributions for different temperatures',
                         xlabel='Gyration radii',
                         ylabel='Counts (relative)')
-
-
-        # for result_set in results:
-        #     plt.hist(result_set[2], alpha=0.7, rwidth=0.85)
-        #     plt.grid(axis='y', alpha=0.75)
-        #     plt.xlabel('Gyration radius')
-        #     plt.ylabel('Counts')
-        #     plt.title('Gyration radius distribution at T = {:.2f}'.format(result_set[0]))
-        #     plt.show()
 
     # Draw violinplot for energy distributions
     draw_violin_plot_over_temp('Energy distributions per temperature',

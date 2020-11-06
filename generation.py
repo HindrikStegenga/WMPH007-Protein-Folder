@@ -1,4 +1,3 @@
-from typing import *
 from classes import *
 from random import *
 

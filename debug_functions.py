@@ -1,4 +1,3 @@
-from generation import *
 from drawing import *
 
 

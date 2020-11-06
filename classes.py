@@ -5,22 +5,29 @@ from typing import *
 import math
 
 
+# Enum representing direction as clock or counter clock wise.
 class Direction(IntEnum):
     ClockWise = 0
     CounterClockWise = 1
 
 
+# Enum representing left or right part of monomer.
+# Used only to make the code more readable.
 class MonomerPart(IntEnum):
     Left = 0
     Right = 1
 
 
+# Enum indicating value of a MonomerRecord
+# Used internally by ProteinLattice class
+# This is so we don't need a second lookup into the chain to get the kind.
 class MonomerRecordValue(IntEnum):
     NONE = 0
     H = 1
     P = 2
 
 
+# Class representing the change of position of a monomer
 class MonomerMoveRecord:
     def __init__(self, index: int, old: Tuple[int, int], new: Tuple[int, int]):
         self.index = index
@@ -28,19 +35,25 @@ class MonomerMoveRecord:
         self.new = new
 
 
+# Class used internally by the ProteinLattice class
+# It stores which monomer is saved at which position and what index it has in the chain.
 class MonomerRecord:
     def __init__(self, value: MonomerRecordValue, index_in_chain: int):
         self.value: MonomerRecordValue = value
         self.index: int = index_in_chain
 
 
+# Enum type representing the various kinds of monomers.
+# In our program this is either H or P.
 class MonomerKind(IntEnum):
     H = 1
     P = 2
 
+    # Override for printing
     def __repr__(self):
         return self.__str__()
 
+    # Return the Kind as text
     def __str__(self):
         return {
             1: 'H',
@@ -48,26 +61,23 @@ class MonomerKind(IntEnum):
         }[self]
 
 
+# Class representing a single monomer in the chain
 class Monomer:
     def __init__(self, kind: MonomerKind, x: int, y: int):
+        # Type of the monomer in the chain
         self.kind = kind
+        # X position of the monomer in the chain
         self.x: int = x
+        # Y position of the monomer in the chain
         self.y: int = y
 
+    # Override for printing
     def __repr__(self):
         return self.__str__()
 
+    # Outputs the monomer as a combination of position and kind, represented as text
     def __str__(self):
         return '(({},{}) {})'.format(self.x, self.y, self.kind.__str__())
-
-
-def calculate_chain_dimensions(chain: List[Monomer]) -> (int, int):
-    min_x = min([elem.x for elem in chain])
-    min_y = min([elem.y for elem in chain])
-    max_x = max([elem.x for elem in chain])
-    max_y = max([elem.y for elem in chain])
-
-    return max_x - min_x, max_y - min_y
 
 
 # Data structure containing the protein chain and a lattice bidirectional lookup structure
@@ -193,13 +203,16 @@ class ProteinLattice:
 
     # Computes the center coordinate of the protein
     def compute_center_point(self) -> Tuple[float, float]:
+        # Retrieve min/max values on each axis
         min_x = min(self.chain, key=lambda e: e.x).x
         max_x = max(self.chain, key=lambda e: e.x).x
         min_y = min(self.chain, key=lambda e: e.y).y
         max_y = max(self.chain, key=lambda e: e.y).y
 
+        # Compute delta's
         dx: float = max_x - min_x
         dy: float = max_y - min_y
+        # Compute centroid
         return min_x + (dx / 2), min_y + (dy / 2)
 
     # Computes the radius of gyration
@@ -226,11 +239,3 @@ class MMCSamples:
     def __init__(self, energy: [float], gyration_radius: [float]):
         self.energy: [float] = energy
         self.gyration_radius: [float] = gyration_radius
-
-
-# Represents collected samples from Annealing MMC Simulation
-class AMMCSamples(MMCSamples):
-    def __init__(self, energy: [float], gyration_radius: [float], heat_capacity: float, temperature: float):
-        super().__init__(energy, gyration_radius)
-        self.heat_capacity: float = heat_capacity
-        self.temperature: [float] = temperature
