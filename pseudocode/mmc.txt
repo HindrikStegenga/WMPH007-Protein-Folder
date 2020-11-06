@@ -33,7 +33,7 @@ func mmc(length, hydrophobicity, max_iterations, temperature, epsilon = 1, boltz
             energy = new_energy
         else
             # Compute boltzmann weight and either accept or reject move
-            w = exp(- (new_energy - energy) / boltzmann * temperature)
+            w = exp(- (new_energy - energy) / (boltzmann * temperature))
             if w > random()
                 energy = new_energy
             else
