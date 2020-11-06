@@ -14,12 +14,20 @@ def main():
     # return
 
     # Enable following lines to run the simulated annealing procedure.
-    lattice = mmc_initialize_default_protein(25, 0.5)
-    seed(12345, 2)
-    lattice, results = perform_mmc_simulated_annealing2(lattice, 250, 15000, 2.0, randomize_seed=False)
+    hydrophobicity = 0.2
+    lattice = mmc_initialize_default_protein(25, hydrophobicity)
+    (lowest_lattice, lowest_energy, lowest_temp), lattice, results = perform_mmc_simulated_annealing(
+        lattice,
+        50,
+        15000,
+        2.0,
+        randomize_seed=True,
+        store_lowest_lattice=True)
+    plot_protein(lowest_lattice, lowest_temp, hydrophobicity)
+    print('Lowest protein: {}'.format(lowest_lattice.chain))
     draw_simulated_annealing_plots(lattice, results,
-                                   draw_energy_histograms_per_temp=True,
-                                   draw_gyration_histograms_per_temp=True)
+                                   draw_energy_histograms_per_temp=False,
+                                   draw_gyration_histograms_per_temp=False)
 
     return
 

@@ -4,6 +4,7 @@ from typing import *
 from generation import *
 from statistics import mean
 import math
+import copy
 import numpy
 
 
@@ -264,7 +265,8 @@ def mmc(temperature: float,
         epsilon: float = 1.0,
         boltzmann: float = 1.0,
         draw_initial_conformation_plot: bool = False,
-        draw_resulting_conformation_plot: bool = False) -> Tuple[ProteinLattice, MMCSamples]:
+        draw_resulting_conformation_plot: bool = False,
+        store_lowest_lattice: bool = False) -> Tuple[Tuple[ProteinLattice, float], ProteinLattice, MMCSamples]:
     # Draw the initial conformation or not
     if draw_initial_conformation_plot:
         drawing.plot_protein(lattice, temperature, lattice.hydrophobicity)
@@ -275,6 +277,9 @@ def mmc(temperature: float,
     energy = calculate_energy(epsilon, lattice)
     energy_samples.append(energy)
     gyration_samples.append(lattice.compute_gyration_radius())
+
+    lowest_lattice = lattice
+    lowest_lattice_energy: float = energy
 
     for iteration in range(0, max_iterations):
         operation_kind = choice([0, 1])
@@ -298,6 +303,10 @@ def mmc(temperature: float,
         new_energy = calculate_energy(epsilon, lattice)
         if new_energy < energy:
             energy = new_energy
+            if store_lowest_lattice and new_energy < lowest_lattice_energy:
+                lowest_lattice = copy.deepcopy(lattice)
+                lowest_lattice_energy = new_energy
+
         else:
             # boltzmann weight
             w: float = math.exp(- (float(new_energy) - float(energy)) / (float(boltzmann) * temperature))
@@ -318,4 +327,4 @@ def mmc(temperature: float,
     if draw_resulting_conformation_plot:
         drawing.plot_protein(lattice, temperature, lattice.hydrophobicity)
 
-    return lattice, MMCSamples(energy_samples, gyration_samples)
+    return (lowest_lattice, lowest_lattice_energy), lattice, MMCSamples(energy_samples, gyration_samples)
